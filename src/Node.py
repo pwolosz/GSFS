@@ -1,3 +1,5 @@
+import numpy as np
+
 class Node:
     """Class representing node of MCTS tree."""
     def __init__(self, feature_name, parent_node = None, is_subtree_full = False):

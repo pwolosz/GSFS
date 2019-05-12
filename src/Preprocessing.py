@@ -1,3 +1,5 @@
+import pandas as pd
+
 class Preprocessing:
     """Class with preprocessing methods"""
     

@@ -1,3 +1,5 @@
+from sklearn.model_selection import StratifiedKFold
+
 class CV:
     """Class containing method for cross-validation"""
     
@@ -24,7 +26,7 @@ class CV:
         Returns: float, cross-validation score
         """
         
-        kfold = StratifiedKFold(n_splits=params['cv'], random_state=None, shuffle=True)
+        kfold = StratifiedKFold(n_splits=cv, random_state=None, shuffle=True)
         score = 0
         
         if metric_name in ['acc','f1']:
@@ -38,4 +40,4 @@ class CV:
                 predicted = model.predict_proba(data.loc[test,:])[:,1]
                 score += metric(labels[test], predicted)
                 
-        return score/params['cv']
+        return score/cv
