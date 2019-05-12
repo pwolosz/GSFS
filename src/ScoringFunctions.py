@@ -1,3 +1,5 @@
+import math
+
 class ScoringFunctions():
     """Class used for getting scoring functions that are used to evaluate the node of the MCTS tree."""
     
