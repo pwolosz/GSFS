@@ -37,7 +37,7 @@ class EvaluationUtils:
                  the ones with MCTS will be named 'MCTS_<metric_name>'.
         """
         
-        scores = pd.DataFrame(columns=['name','model_roc_auc','model_acc','MCTS_roc_auc','MCTS_acc'])
+        scores = pd.DataFrame(columns=['name','model_roc_auc','model_acc','MCTS_roc_auc','MCTS_acc','n_iter'])
         
         for file_info in files_info:
             print('Using ' + file_info['name'])
@@ -60,6 +60,7 @@ class EvaluationUtils:
             predicted_proba = mcts.predict_proba(X_test)[:,1]
             scores.loc[scores.loc[:,'name'] == file_info['name'], 'MCTS_roc_auc'] = str(roc_auc_score(y_test, predicted_proba))
             scores.loc[scores.loc[:,'name'] == file_info['name'], 'MCTS_acc'] = str(accuracy_score(y_test, predicted))
+            scores.loc[scores.loc[:,'name'] == file_info['name'], 'n_iter'] = mcts.get_number_of_iterations()
             
         scores.to_csv(out_path + out_file_name + '.csv')
         

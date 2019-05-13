@@ -116,4 +116,10 @@ class MCTS:
         return self._model.predict_proba(data.loc[:, self._best_features])
     
     def get_features_importances(self):
-        return self._global_scores.scores['g_rave']
+        return dict([k, v['score']] for k,v in self._global_scores.scores['g_rave'].items())
+    
+    def one_hot_encode(self, data):
+        return Preprocessing.one_hot_encode(data)
+    
+    def get_number_of_iterations(self):
+        return self._global_scores.scores['g_rave']['']['n']
