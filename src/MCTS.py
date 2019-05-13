@@ -27,10 +27,14 @@ class MCTS:
         if(params is None):
             self._params = DefaultSettings.get_default_params()
         
-    def fit(self, data, out_variable):
+    def fit(self, data, out_variable, preprocess = True, pos_class = 'numeric'):
         data = data.reset_index(drop=True)
         out_variable = out_variable.reset_index(drop=True)
-        if(self._task == 'classification'):
+        
+        if preprocess:
+            out_variable = self._preprocess_labels(out_variable, pos_class)
+        
+        if self._task == 'classification':
             self._classification_fit(data, out_variable)
         else:
             self._regression_fit(data, out_variable)
@@ -98,6 +102,12 @@ class MCTS:
         else:
             #print('Time ellapsed: ' + str(time.time() - self._time))
             return (time.time() - self._time) > self._calculactions_done_conditions['max_val'] 
+    
+    def _preprocess_labels(self, labels, pos_class):
+        if pos_class == 'numeric':
+            pos_class = 1
+            
+        return Preprocessing.relabel_data(labels, pos_class)
     
     def predict(self, data):
         return self._model.predict(data.loc[:, self._best_features])
