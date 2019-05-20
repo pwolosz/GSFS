@@ -22,6 +22,7 @@ class Node:
         self._is_subtree_full = is_subtree_full
         self._parent_node = parent_node
         self._scores = []
+        self.first_not_visited = None
         
     def add_child_node(self, node_name, is_subtree_full = False):
         """
