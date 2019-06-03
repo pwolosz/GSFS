@@ -27,20 +27,27 @@ class MCTS:
         if(params is None):
             self._params = DefaultSettings.get_default_params()
         
-    def fit(self, data, out_variable, preprocess = True, pos_class = 'numeric'):
+    def fit(self, data, out_variable, preprocess = True, pos_class = 'numeric', warm_start = True):
         data = data.reset_index(drop=True)
         out_variable = out_variable.reset_index(drop=True)
-        
+
         if preprocess:
             out_variable = self._preprocess_labels(out_variable, pos_class)
         
         if self._task == 'classification':
-            self._classification_fit(data, out_variable)
+            self._classification_fit(data, out_variable, warm_start)
         else:
             self._regression_fit(data, out_variable)
             
-    def _classification_fit(self, data, out_variable):
+    def _classification_fit(self, data, out_variable, warm_start):
         self._init_fitting_values(data)
+        
+        if warm_start:
+            rf = RandomForestClassifier()
+            rf.fit(data, out_variable)
+            for i in range(len(data.columns)):
+                self._global_scores.update_g_rave_score(data.columns[i], rf.feature_importances_[i])
+        
         while not self._is_fitting_over():
             self._single_classification_iteration(data, out_variable)
         
@@ -55,7 +62,7 @@ class MCTS:
         node = self._root
         is_iteration_over = False
         while not is_iteration_over:
-            node = self._multiarm_strategy.multiarm_strategy(node, used_features, self._scoring_function.get_score, self._global_scores.scores)
+            node = self._multiarm_strategy.multiarm_strategy(node, used_features, self._scoring_function.get_score, self._global_scores.scores,self._params)
             #print("selected feature: " + node.feature_name)
             is_iteration_over = self._end_strategy.are_calculations_over(node, self._params)
             used_features.add(node.feature_name)

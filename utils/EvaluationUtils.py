@@ -136,5 +136,7 @@ class EvaluationUtils:
             'n_iter': mcts.get_number_of_iterations(),
             'MCTS_best_score': mcts._best_score,
             'model_roc_test': model_roc_test,
-            'model_acc_test': model_acc_test
+            'model_acc_test': model_acc_test,
+            'are_all_selected': (True if len(mcts._best_features) == len(X_train.columns) else False),
+            'selected': ', '.join(list(map(str,mcts._best_features)))
         })

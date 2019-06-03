@@ -15,7 +15,7 @@ class MultiArmStrategies:
         self._name = name
         self._all_node_names = all_node_names
         
-    def multiarm_strategy(self, node, used_features, scoring_function, other_scores):
+    def multiarm_strategy(self, node, used_features, scoring_function, other_scores, params):
         """
         Method for getting next node in current search.
         Parameters
@@ -28,6 +28,8 @@ class MultiArmStrategies:
             Scoring function that is used in current search instance
         other_scores: dict
             Dictionary containing scores used in strategy
+        params: dict
+            Dictionary with MCTS parameters
         """
         
         if(self._name == 'default'):
@@ -36,13 +38,10 @@ class MultiArmStrategies:
             raise Exception("Error getting multiarm strategy, strategy \'" + self._name + "\' is not supported.")   
     
     def _default_strategy(self, node, used_features, scoring_function, other_scores):
-        #print("default strategy: " + node.feature_name)
         if(len(node.child_nodes) == 0):
-            #print("first if")
             self._add_child_nodes(node, used_features)
             return node.child_nodes[0]
         else:
-            #print("else")
             best_score = 0
             best_node = None
             tmp_score = 0
@@ -54,7 +53,6 @@ class MultiArmStrategies:
                         best_score = score
                         best_node = child_node
             return best_node
-  
+
     def _add_child_nodes(self, node, used_features):
-        #print('adding nodes to ' + node.feature_name + ' :' + ' '.join(self._all_node_names - used_features))
         node.add_child_nodes(self._all_node_names - used_features)   
