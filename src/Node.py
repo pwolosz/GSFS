@@ -100,3 +100,13 @@ class Node:
         while(current_node != None):
             current_node.update_node(score, scores)
             current_node = current_node._parent_node  
+            
+    def get_str_node_info(self):
+        """
+        
+        """
+        
+        return '''T: {:d}
+        avg score: {:.4f}
+        var: {:.4f}
+        '''.format(self.T, self.score_sum/self.T if self.T != 0 else 0, np.var(self._scores) if self.T != 0 else 0)
