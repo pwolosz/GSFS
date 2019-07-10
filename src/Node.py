@@ -22,6 +22,7 @@ class Node:
         self._is_subtree_full = is_subtree_full
         self._parent_node = parent_node
         self._scores = []
+        self.id = str(id(self))
         
     def add_child_node(self, node_name, is_subtree_full = False):
         """
@@ -36,6 +37,8 @@ class Node:
         
         new_node = Node(node_name, self, is_subtree_full)
         self.child_nodes.append(new_node)
+        
+        return new_node
         
     def add_child_nodes(self, node_names):
         """

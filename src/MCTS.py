@@ -7,7 +7,7 @@ class MCTS:
                  params = None,
                  metric = 'acc', 
                  scoring_function = 'g_rave', 
-                 multiarm_strategy = 'default', 
+                 multiarm_strategy = 'discrete', 
                  end_strategy = 'default'):
         
         self._metric_name = metric
@@ -62,7 +62,7 @@ class MCTS:
         node = self._root
         is_iteration_over = False
         while not is_iteration_over:
-            node = self._multiarm_strategy.multiarm_strategy(node, used_features, self._scoring_function.get_score, self._global_scores.scores,self._params)
+            node = self._multiarm_strategy.multiarm_strategy(node, used_features, self._scoring_functions.get_score, self._global_scores.scores,self._params)
             #print("selected feature: " + node.feature_name)
             is_iteration_over = self._end_strategy.are_calculations_over(node, self._params)
             used_features.add(node.feature_name)
@@ -87,9 +87,9 @@ class MCTS:
     
     def _init_fitting_values(self, data):
         self._feature_names = set(data.columns)
-        self._multiarm_strategy = MultiArmStrategies(self._multiarm_strategy_name, self._feature_names)
+        self._multiarm_strategy = MultiArmStrategies(self._multiarm_strategy_name, self._feature_names, self._params)
         self._end_strategy = EndStrategies(self._end_strategy_name)
-        self._scoring_function = ScoringFunctions(self._scoring_function_name, self._params)
+        self._scoring_functions = ScoringFunctions(self._scoring_function_name, self._params)
         self._metric = BuildInMetrics().get_metric(self._metric_name)
         self._best_features = None
         self._best_score = 0

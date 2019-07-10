@@ -9,6 +9,7 @@ class DefaultSettings:
             "c_e": 2,
             "c": 1,
             "c_l": 1,
-			"cv": 4
+            "cv": 4,
+            "b_T": 2
         }
     
