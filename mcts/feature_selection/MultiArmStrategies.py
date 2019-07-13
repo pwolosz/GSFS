@@ -78,10 +78,8 @@ class MultiArmStrategies:
         not_used_features = self._all_node_names - used_features
         
         for tmp_node in node.child_nodes:
-            print('removing :' + tmp_node.feature_name)
             not_used_features.remove(tmp_node.feature_name)
         
-        print('not used: ' + (', '.join(not_used_features)))
         
         for feature in not_used_features:
             curr_score = scoring_functions.get_feature_score(feature, global_scores)
@@ -89,8 +87,7 @@ class MultiArmStrategies:
                 best_score = curr_score
                 best_feature = feature
   
-        print(best_score)
-    
+
         if len(not_used_features) == 1:
             node.all_children_added = True
         

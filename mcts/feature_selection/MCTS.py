@@ -69,31 +69,23 @@ class MCTS:
         return None
     
     def _single_classification_iteration(self, data, out_variable):
-        print('classification iteration')
         used_features = set()
         node = self._root
         is_iteration_over = False
         while not is_iteration_over:
-            print('current while feature: ' + node.feature_name)
             node = self._multiarm_strategy.multiarm_strategy(node, used_features, self._scoring_functions, self._global_scores,self._params)
-            print("selected feature: " + node.feature_name)
             is_iteration_over = self._end_strategy.are_calculations_over(node, self._params)
             used_features.add(node.feature_name)
-            print("--------")
         
         score = CV.cv(self._metric, self._metric_name, self._model, data, out_variable, self._params['cv'])
-        #score = self._cv_score(data.loc[:,used_features], out_variable)
-        #print('score: ' + str(score))
         node.update_scores_up(score, self._global_scores)
-        print(used_features)
         if(score > self._best_score):
             self._best_score = score
             self._best_features = used_features
         
         if(self._longest_tree_branch < len(used_features)):
             self._longest_tree_branch = len(used_features)
-        
-        print("----------END OF ITERATION----------")
+
     
     def _single_regression_iteration(self):
         return None
@@ -120,7 +112,6 @@ class MCTS:
             self._iterations += 1
             return self._iterations > self._calculactions_done_conditions['max_val'] 
         else:
-            #print('Time ellapsed: ' + str(time.time() - self._time))
             return (time.time() - self._time) > self._calculactions_done_conditions['max_val'] 
     
     def _preprocess_labels(self, labels, pos_class):
