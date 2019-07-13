@@ -1,7 +1,14 @@
-from mcts.Node import *
-from mcts.DefaultSettings import *
-from utls.CV import *
-from mcts.Preprocessing import *
+from mcts.feature_selection.Node import *
+from mcts.feature_selection.DefaultSettings import *
+from mcts.feature_selection.CV import *
+from mcts.feature_selection.Preprocessing import *
+from mcts.feature_selection.MultiArmStrategies import *
+from mcts.feature_selection.EndStrategies import *
+from mcts.feature_selection.ScoringFunctions import *
+from mcts.feature_selection.BuildInMetrics import *
+from mcts.feature_selection.GlobalScores import *
+import time
+from sklearn.ensemble import RandomForestClassifier
 
 class MCTS:
     """Class for MCTS"""
@@ -62,22 +69,23 @@ class MCTS:
         return None
     
     def _single_classification_iteration(self, data, out_variable):
-        #print('classification iteration')
+        print('classification iteration')
         used_features = set()
         node = self._root
         is_iteration_over = False
         while not is_iteration_over:
-            node = self._multiarm_strategy.multiarm_strategy(node, used_features, self._scoring_functions.get_score, self._global_scores.scores,self._params)
-            #print("selected feature: " + node.feature_name)
+            print('current while feature: ' + node.feature_name)
+            node = self._multiarm_strategy.multiarm_strategy(node, used_features, self._scoring_functions, self._global_scores,self._params)
+            print("selected feature: " + node.feature_name)
             is_iteration_over = self._end_strategy.are_calculations_over(node, self._params)
             used_features.add(node.feature_name)
-            #print("--------")
+            print("--------")
         
         score = CV.cv(self._metric, self._metric_name, self._model, data, out_variable, self._params['cv'])
         #score = self._cv_score(data.loc[:,used_features], out_variable)
         #print('score: ' + str(score))
         node.update_scores_up(score, self._global_scores)
-        #print(used_features)
+        print(used_features)
         if(score > self._best_score):
             self._best_score = score
             self._best_features = used_features
@@ -85,7 +93,7 @@ class MCTS:
         if(self._longest_tree_branch < len(used_features)):
             self._longest_tree_branch = len(used_features)
         
-        #print("----------END OF ITERATION----------")
+        print("----------END OF ITERATION----------")
     
     def _single_regression_iteration(self):
         return None
@@ -128,7 +136,7 @@ class MCTS:
         return self._model.predict_proba(data.loc[:, self._best_features])
     
     def get_features_importances(self):
-        return dict([k, v['score']] for k,v in self._global_scores.scores['g_rave'].items())
+        return dict([k, self._global_scores.get_g_rave_score(k)] for k,v in self._global_scores.scores['g_rave'].items())
     
     def one_hot_encode(self, data):
         return Preprocessing.one_hot_encode(data)

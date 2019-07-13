@@ -1,3 +1,5 @@
+import math
+
 class MultiArmStrategies:
     """Class for representing strategies used for selecting next node to visit in MCTS. 
     For more info please see documentation"""
@@ -26,9 +28,9 @@ class MultiArmStrategies:
         used_features: list
             List of feature names that are already used in search path
         scoring_functions: ScoringFunctions
-            Object with functions that are used in current search instance
+            Object containing functions for calculating scores
         global_scores: GlobalScores
-            GlobalScores object with methods and dictionary necessary to calculate scores used in strategy
+            Object containing scores used in strategy
         params: dict
             Dictionary with MCTS parameters
         """
@@ -45,17 +47,17 @@ class MultiArmStrategies:
             self._add_all_child_nodes(node, used_features)
             return node.child_nodes[0]
         else:
-            return _get_best_node(self, node, scoring_functions, global_scores)
+            return self._get_best_node(node, scoring_functions, global_scores)
 
     def _discrete_strategy(self, node, used_features, scoring_functions, global_scores):
-        if len(node.child_nodes) == 0 or self._should_add_child(node):
-            return self._add_child_node(node, global_scores, scoring_functions)
+        if (len(node.child_nodes) == 0 or self._should_add_child(node)) and not node.all_children_added:
+            return self._add_child_node(node, scoring_functions, global_scores, used_features)
         else:
-            return _get_best_node(self, node, scoring_functions, global_scores)
+            return self._get_best_node(node, scoring_functions, global_scores)
                 
         
     def _should_add_child(self, node):
-        return int(node.T**self._params['b_T']) - int((node.T - 1)**self._params['b_T']) > 0
+        return (int(math.pow(node.T, self._params['b_T'])) - int(math.pow(node.T - 1, self._params['b_T']))) > 0
     
     def _get_best_node(self, node, scoring_functions, global_scores):
         best_score = 0
@@ -70,20 +72,32 @@ class MultiArmStrategies:
                     best_node = child_node
         return best_node
     
-    def _add_child_node(self, node, global_scores, scoring_functions):
+    def _add_child_node(self, node, scoring_functions, global_scores, used_features):
         best_score = 0
         best_feature = None
+        not_used_features = self._all_node_names - used_features
         
-        for feature in (self._all_node_names - used_features):
+        for tmp_node in node.child_nodes:
+            print('removing :' + tmp_node.feature_name)
+            not_used_features.remove(tmp_node.feature_name)
+        
+        print('not used: ' + (', '.join(not_used_features)))
+        
+        for feature in not_used_features:
             curr_score = scoring_functions.get_feature_score(feature, global_scores)
             if curr_score > best_score:
                 best_score = curr_score
                 best_feature = feature
-                
+  
+        print(best_score)
+    
+        if len(not_used_features) == 1:
+            node.all_children_added = True
+        
         if best_feature is not None:
-            return node.add_child_nodes(best_feature)
+            return node.add_child_node(best_feature)
         else:
-            return node.add_child_nodes((self._all_node_names - used_features)[0])
+            return node.add_child_node((self._all_node_names - used_features)[0])
         
     def _add_all_child_nodes(self, node, used_features):
         node.add_child_nodes(self._all_node_names - used_features)   

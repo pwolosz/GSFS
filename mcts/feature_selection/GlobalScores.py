@@ -1,3 +1,5 @@
+from mcts.feature_selection.LRavePaths import *
+
 class GlobalScores:
     """Class used for getting global scores like g-RAVE and l-RAVE."""
     

@@ -1,9 +1,9 @@
 import numpy as np
-from mcts.LRavePaths import *
+from mcts.feature_selection.LRavePaths import *
 
 class Node:
     """Class representing node of MCTS tree."""
-    def __init__(self, feature_name, parent_node = None, is_subtree_full = False):
+    def __init__(self, feature_name, parent_node = None, is_subtree_full = False, are_all_children_added = False):
         """
         Parameters
         ----------
@@ -24,8 +24,9 @@ class Node:
         self._parent_node = parent_node
         self._scores = []
         self.id = str(id(self))
+        self.all_children_added = are_all_children_added
         
-    def add_child_node(self, node_name, is_subtree_full = False):
+    def add_child_node(self, node_name, is_subtree_full = False, are_all_children_added = False):
         """
         Method for adding child node to children of current node.
         Parameters
@@ -112,4 +113,4 @@ class Node:
         return '''T: {:d}
         avg score: {:.4f}
         var: {:.4f}
-        '''.format(self.T, self.score_sum/self.T if self.T != 0 else 0, np.var(self._scores) if self.T != 0 else 0)
+        '''.format(self.T, (self.score_sum/self.T if self.T != 0 else 0), (np.var(self._scores) if self.T != 0 else 0))

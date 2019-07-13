@@ -29,14 +29,14 @@ class EndStrategies:
             raise Exception("Error getting end strategy, end strategy \'" + self._name + "\'")
         
     def _first_new_strategy(self, node, params):
-        #print("_first_new_strategy:")
+        print("_first_new_strategy:")
         if(node.T > 0 and not node._is_subtree_full):
-            #print("first if")
+            print("first if")
             return False
         else:
             if(node._parent_node == None):
-                #print("second if, no parent node")
+                print("second if, no parent node")
                 return False
             else:
-                #print("else")
+                print("else")
                 return True
