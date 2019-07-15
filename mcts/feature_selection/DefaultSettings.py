@@ -13,3 +13,18 @@ class DefaultSettings:
             "b_T": 0.5
         }
     
+    @staticmethod
+    def merge_params(params):
+        """
+        Method for merging user's params with the default ones
+        Parameters
+        ----------
+        params: dict
+            Dictioary with mcts parameters
+        """
+        
+        merged_params = DefaultSettings.get_default_params()
+        for key, value in params.items():
+            merged_params[key] = value
+            
+        return merged_params
