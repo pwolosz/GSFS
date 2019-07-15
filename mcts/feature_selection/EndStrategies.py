@@ -29,7 +29,6 @@ class EndStrategies:
             raise Exception("Error getting end strategy, end strategy \'" + self._name + "\'")
         
     def _first_new_strategy(self, node, params):
-        print("_first_new_strategy:")
         if(node.T > 0 and not node._is_subtree_full):
             return False
         else:
