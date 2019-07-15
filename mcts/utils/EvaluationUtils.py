@@ -1,8 +1,16 @@
+import os  
+import datetime
+from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
+from mcts.feature_selection.DrawTree import draw_tree
+import pandas as pd
+import numpy as np
+import openml
+
 class EvaluationUtils:
     """Class containing methods for evaluation of MCTS model"""
     
     @staticmethod
-    def eval(model, files_info, data_path, out_path, out_file_name, eval_time, metric_name, cv = 4, params = None):
+    def eval(model, files_info, data_path, out_path, out_file_name, eval_time, metric_name, cv = 4, mcts_cv = 5, params = None):
         """
         Method for calculating scores for selected model and MCTS used for this model. 
         Calculated metrics will be accuracy, AUC.
@@ -28,6 +36,8 @@ class EvaluationUtils:
             Name of the metric that will be used as metric in MCTS
         cv: int
             Number of folds in cross-validation
+        mcts_cv: int
+            Number of folds in cross-validation (in mcts algorithm)
         params: dict (default: None)
             Dictionary with parameters of MCTS, if None then default ones from DefaultSettings will be used 
         
@@ -57,7 +67,10 @@ class EvaluationUtils:
         return scores
     
     @staticmethod
-    def openml_eval(model, tasks_info, out_path, out_file_name, eval_time, metric_name, cv = 4, params = None):
+    def openml_eval(model, tasks_info, out_path, out_file_name, 
+                    metric_name, cv, mcts_cv, 
+                    calculations_done_condition, calculations_budget, scoring_function,
+                    multiarm_strategy, end_strategy, models = None, mcts_params = None, name = None):
         """
         Method for calculating scores using data from openml.org for selected model and MCTS used for this model. 
         Calculated metrics will be accuracy, AUC.
@@ -80,6 +93,8 @@ class EvaluationUtils:
             Name of the metric that will be used as metric in MCTS
         cv: int
             Number of folds in cross-validation
+        mcts_cv: int
+            Number of folds in cross-validation in mcts 
         params: dict (default: None)
             Dictionary with parameters of MCTS, if None then default ones from DefaultSettings will be used 
         
@@ -87,9 +102,9 @@ class EvaluationUtils:
                  the ones with MCTS will be named 'MCTS_<metric_name>'.
         """
         
-        scores = pd.DataFrame(columns=['name','model_roc_auc_cv','model_acc_cv',
-                                       'model_roc_test','model_acc_test',
-                                       'MCTS_roc_auc','MCTS_acc','n_iter'])
+        scores = pd.DataFrame(columns=['name', 'model_roc_auc_cv', 'model_acc_cv',
+            'model_acc_cv','MCTS_roc_auc','MCTS_acc','MCTS_f1','MCTS_f1_var',
+            'MCTS_acc_var','MCTS_roc_var','n_iter','MCTS_best_score'])
         
         for index, task in tasks_info.iterrows():
             print('Using ' + task['name'] + ' (' + str(index + 1) + '/' + str(tasks_info.shape[0]) + ')')
@@ -105,38 +120,83 @@ class EvaluationUtils:
                 print(task['name'] + ' - error')
             
             if is_data_loaded:
-                scores = scores.append(EvaluationUtils.eval_mcts(model, data, labels, task['name'], 
-                                                                 eval_time, metric_name, cv = 4, params = None), 
+                scores = scores.append(EvaluationUtils.eval_mcts(model, data, labels, name, out_path, metric_name, cv, mcts_cv, 
+                  calculations_done_condition, calculations_budget, scoring_function,
+                  multiarm_strategy, end_strategy, models, mcts_params), 
                                        ignore_index = True)
-
-            
-                
-        scores.to_csv(out_path + out_file_name + '.csv')
+     
+        scores.to_csv(out_path + '/' + out_file_name + '.csv')
         
         return scores
     
     @staticmethod
-    def eval_mcts(model, data, labels, name, eval_time, metric_name, cv = 4, params = None):
+    def eval_mcts(model, data, labels, name, out_path, metric_name, cv, mcts_cv, 
+                  calculations_done_condition, calculations_budget, scoring_function,
+                  multiarm_strategy, end_strategy, models = None, mcts_params = None):
+
+        kfold = StratifiedKFold(n_splits=cv, random_state=None, shuffle=True)
+        f1_scores = []
+        acc_scores = []
+        auc_scores = []
+        longest_paths = []
+        ids = []
         
-        mcts = MCTS(model, calculactions_done_conditions = {'type': 'time', 'max_val': eval_time}, metric=metric_name)
-        X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size = 0.25, random_state = 123)
-        mcts.fit(X_train, y_train, preprocess = False)
-        predicted = mcts.predict(X_test)
-        predicted_proba = mcts.predict_proba(X_test)[:,1]
-        model.fit(X_train, y_train)
-        model_roc_test = roc_auc_score(y_test, model.predict_proba(X_test)[:,1])
-        model_acc_test = accuracy_score(model.predict(X_test), y_test)
+        out_path += '/' + name + str(datetime.datetime.now().timestamp())
+        if not os.path.exists(out_path):
+            try:  
+                os.mkdir(out_path)
+            except OSError:  
+                print ("Creation of the directory %s failed" % path)
+        
+        
+        for train, test in kfold.split(data, labels):
+            mcts = MCTS(model, calculations_done_condition = calculations_done_condition, 
+                    calculations_budget = calculations_budget,
+                    metric = metric_name, params = mcts_params, end_strategy = end_strategy,
+                    multiarm_strategy = multiarm_strategy, scoring_function = scoring_function)
+            
+            mcts_id = id(mcts)
+            
+            ids.append(mcts_id)
+        
+            mcts.fit(data.loc[train,:], labels[train], preprocess = False)
+            predicted = mcts.predict(data.loc[test,:])
+            predicted_proba = mcts.predict_proba(data.loc[test,:])[:,1]
+
+            f1_scores.append(f1_score(labels[test], predicted))
+            auc_scores.append(roc_auc_score(labels[test], predicted_proba))
+            acc_scores.append(accuracy_score(predicted, labels[test]))
+            longest_paths.append(mcts._longest_tree_branch)
+            
+            mcts.save_stats_to_file(out_path + '/' + str(mcts_id) + '.txt')
+            pd.DataFrame({'id': ids, 'roc': auc_scores, 'acc': acc_scores,
+                         'f1': f1_scores, 'longest_paths': longest_paths})
+            draw_tree(mcts._root, view = False, view_nodes_info = False, file_name = out_path + '/' + str(mcts_id))
+            if models is not None:
+                model_scores = {}
+                for key, value in models.items():
+                    if key not in model_scores:
+                        model_scores[key] = {'roc': [], 'acc': [], 'f1': []}
+                    value.fit(data.loc[test,:])
+                    predicted = mcts.predict(data.loc[test,:])
+                    predicted_proba = mcts.predict_proba(data.loc[test,:])[:,1]
+                    model_scores[key]['roc'].append(roc_auc_score(labels[test], predicted_proba))
+                    model_scores[key]['f1'].append(f1_score(labels[test], predicted))
+                    model_scores[key]['acc'].append(accuracy_score(predicted, labels[test]))
+
+                model_scores.to_csv(out_path + '/' + 'part_scores.csv')
         
         return pd.Series({
             'name': name,
             'model_roc_auc_cv': CV.cv(roc_auc_score, 'roc_auc', model, data, labels, cv),
             'model_acc_cv': CV.cv(accuracy_score, 'acc', model, data, labels, cv),
-            'MCTS_roc_auc': roc_auc_score(y_test, predicted_proba),
-            'MCTS_acc': accuracy_score(y_test, predicted),
+            'model_acc_cv': CV.cv(f1_score, 'f1', model, data, labels, cv),
+            'MCTS_roc_auc': np.mean(auc_scores),
+            'MCTS_acc': np.mean(acc_scores),
+            'MCTS_f1': np.mean(f1_scores),
+            'MCTS_f1_var': np.var(acc_scores),
+            'MCTS_acc_var': np.var(acc_scores),
+            'MCTS_roc_var': np.var(acc_scores),
             'n_iter': mcts.get_number_of_iterations(),
-            'MCTS_best_score': mcts._best_score,
-            'model_roc_test': model_roc_test,
-            'model_acc_test': model_acc_test,
-            'are_all_selected': (True if len(mcts._best_features) == len(X_train.columns) else False),
-            'selected': ', '.join(list(map(str,mcts._best_features)))
+            'MCTS_best_score': mcts._best_score
         })

@@ -15,7 +15,7 @@ class MCTS:
     def __init__(self, 
                  model,
                  task = 'classification',
-                 calculations_done_conditions = 'iterations',
+                 calculations_done_condition = 'iterations',
                  calculations_budget = 10,
                  params = None,
                  metric = 'acc', 
@@ -32,7 +32,7 @@ class MCTS:
         self._task = task
         self._root = Node("")
         self._feature_names = None
-        self._calculations_done_conditions = calculations_done_conditions
+        self._calculations_done_condition = calculations_done_condition
         self._calculations_budget = calculations_budget
         self._model = model
         self._time = 0
@@ -48,12 +48,13 @@ class MCTS:
                  calculations_budget = None):
         
         if calculations_done_conditions is not None:
-            self._calculations_done_conditions = calculations_done_conditions
+            self._calculations_done_condition = calculations_done_conditions
         
         if calculations_budget is not None:
             self._calculations_budget = calculations_budget
             
         data = data.reset_index(drop=True)
+        data.columns = [str(col) for col in data.columns]
         out_variable = out_variable.reset_index(drop=True)
 
         if preprocess:
@@ -123,7 +124,7 @@ class MCTS:
             print('Whole tree searched, finishing prematurely')
             return True
         
-        if(self._calculations_done_conditions == 'iterations'):
+        if(self._calculations_done_condition == 'iterations'):
             self._iterations += 1
             return self._iterations > self._calculations_budget 
         else:
@@ -136,15 +137,18 @@ class MCTS:
         return Preprocessing.relabel_data(labels, pos_class)
     
     def predict(self, data):
+        data.columns = [str(col) for col in data.columns]
         return self._model.predict(data.loc[:, self._best_features])
     
     def predict_proba(self, data):
+        data.columns = [str(col) for col in data.columns]
         return self._model.predict_proba(data.loc[:, self._best_features])
     
     def get_features_importances(self):
         return dict([k, self._global_scores.get_g_rave_score(k)] for k,v in self._global_scores.scores['g_rave'].items())
     
     def one_hot_encode(self, data):
+        data.columns = [str(col) for col in data.columns]
         return Preprocessing.one_hot_encode(data)
     
     def get_number_of_iterations(self):
@@ -153,7 +157,7 @@ class MCTS:
     def save_stats_to_file(self, path):
         if self._best_features is None:
             raise('Model not trained, please fit the model first')
-            
+           
         with open(path, 'w') as f:
             f.write('Best score: ' + str(self._best_score))
             f.write('\nBest features: ' + ', '.join(self._best_features))
@@ -163,7 +167,7 @@ class MCTS:
             f.write('\nScoring function: ' + str(self._scoring_function_name))
             f.write('\nMultiarm strategy: ' + str(self._multiarm_strategy_name))
             f.write('\nEnd strategy: ' + str(self._end_strategy_name))
-            f.write('\nCalculations done condition: ' + str(self._calculations_done_conditions))
+            f.write('\nCalculations done condition: ' + str(self._calculations_done_condition))
             f.write('\nCalculations budget: ' + str(self._calculations_budget))
             
             f.write('\nScores history: ')
@@ -173,3 +177,4 @@ class MCTS:
             f.write('\nParameters: ')
             for key, value in self._params.items():
                 f.write('\n' + key + ': ' + str(value))
+                
