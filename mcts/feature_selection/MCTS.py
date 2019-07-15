@@ -15,7 +15,8 @@ class MCTS:
     def __init__(self, 
                  model,
                  task = 'classification',
-                 calculactions_done_conditions = {'type': 'iterations', 'max_val': 10},
+                 calculations_done_conditions = 'iterations',
+                 calculations_budget = 10,
                  params = None,
                  metric = 'acc', 
                  scoring_function = 'g_rave', 
@@ -31,15 +32,27 @@ class MCTS:
         self._task = task
         self._root = Node("")
         self._feature_names = None
-        self._calculactions_done_conditions = calculactions_done_conditions
+        self._calculations_done_conditions = calculations_done_conditions
+        self._calculations_budget = calculations_budget
         self._model = model
         self._time = 0
         self._iterations = 0
         
-        if(params is None):
+        if params is None:
             self._params = DefaultSettings.get_default_params()
+        else:
+            self._params = DefaultSettings.merge_params(params)
         
-    def fit(self, data, out_variable, preprocess = True, pos_class = 'numeric', warm_start = True):
+    def fit(self, data, out_variable, preprocess = True, pos_class = 'numeric', warm_start = True,
+                 calculations_done_conditions = None,
+                 calculations_budget = None):
+        
+        if calculations_done_conditions is not None:
+            self._calculations_done_conditions = calculations_done_conditions
+        
+        if calculations_budget is not None:
+            self._calculations_budget = calculations_budget
+            
         data = data.reset_index(drop=True)
         out_variable = out_variable.reset_index(drop=True)
 
@@ -82,6 +95,7 @@ class MCTS:
         if(score > self._best_score):
             self._best_score = score
             self._best_features = used_features
+            self._scores_history.append({'score': score, 'features': used_features})
         
         if(self._longest_tree_branch < len(used_features)):
             self._longest_tree_branch = len(used_features)
@@ -102,17 +116,18 @@ class MCTS:
         self._longest_tree_branch = 0
         self._time = time.time()
         self._global_scores = GlobalScores()
+        self._scores_history = []
     
     def _is_fitting_over(self):
         if(self._root._is_subtree_full):
             print('Whole tree searched, finishing prematurely')
             return True
         
-        if(self._calculactions_done_conditions['type'] == 'iterations'):
+        if(self._calculations_done_conditions == 'iterations'):
             self._iterations += 1
-            return self._iterations > self._calculactions_done_conditions['max_val'] 
+            return self._iterations > self._calculations_budget 
         else:
-            return (time.time() - self._time) > self._calculactions_done_conditions['max_val'] 
+            return (time.time() - self._time) > self._calculations_budget 
     
     def _preprocess_labels(self, labels, pos_class):
         if pos_class == 'numeric':
@@ -134,3 +149,27 @@ class MCTS:
     
     def get_number_of_iterations(self):
         return self._global_scores.scores['g_rave']['']['n']
+    
+    def save_stats_to_file(self, path):
+        if self._best_features is None:
+            raise('Model not trained, please fit the model first')
+            
+        with open(path, 'w') as f:
+            f.write('Best score: ' + str(self._best_score))
+            f.write('\nBest features: ' + ', '.join(self._best_features))
+            f.write('\nFull tree searched: ' + str(self._root._is_subtree_full))
+            f.write('\nLongest branch: ' + str(self._longest_tree_branch))
+            f.write('\nMetric name: ' + str(self._metric_name))
+            f.write('\nScoring function: ' + str(self._scoring_function_name))
+            f.write('\nMultiarm strategy: ' + str(self._multiarm_strategy_name))
+            f.write('\nEnd strategy: ' + str(self._end_strategy_name))
+            f.write('\nCalculations done condition: ' + str(self._calculations_done_conditions))
+            f.write('\nCalculations budget: ' + str(self._calculations_budget))
+            
+            f.write('\nScores history: ')
+            for sc in self._scores_history:
+                f.write('\nscore: ' + str(sc['score']) + ', features: ' + ', '.join(sc['features']))
+            
+            f.write('\nParameters: ')
+            for key, value in self._params.items():
+                f.write('\n' + key + ': ' + str(value))
