@@ -61,11 +61,17 @@ class MCTS:
             out_variable = self._preprocess_labels(out_variable, pos_class)
         
         if self._task == 'classification':
-            self._classification_fit(data, out_variable, warm_start)
+            self._classification_fit_start(data, out_variable, warm_start)
         else:
             self._regression_fit(data, out_variable)
+    
+    def refit(self, data, out_variable, calculations_budget = None):
+        if calculations_budget is not None:
+            self._calculations_budget = calculations_budget
             
-    def _classification_fit(self, data, out_variable, warm_start):
+        self._classification_fit(data, out_variable)
+    
+    def _classification_fit_start(self, data, out_variable, warm_start):
         self._init_fitting_values(data)
         
         if warm_start:
@@ -73,6 +79,12 @@ class MCTS:
             rf.fit(data, out_variable)
             for i in range(len(data.columns)):
                 self._global_scores.update_g_rave_score(data.columns[i], rf.feature_importances_[i])
+        
+        self._classification_fit(data, out_variable)
+    
+    def _classification_fit(self, data, out_variable):
+        self._iterations = 0
+        self._time = time.time()
         
         while not self._is_fitting_over():
             self._single_classification_iteration(data, out_variable)
@@ -113,9 +125,7 @@ class MCTS:
         self._metric = BuildInMetrics().get_metric(self._metric_name)
         self._best_features = None
         self._best_score = 0
-        self._iterations = 0
         self._longest_tree_branch = 0
-        self._time = time.time()
         self._global_scores = GlobalScores()
         self._scores_history = []
     
