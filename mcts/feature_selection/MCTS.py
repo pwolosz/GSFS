@@ -21,7 +21,8 @@ class MCTS:
                  metric = 'acc', 
                  scoring_function = 'g_rave', 
                  multiarm_strategy = 'discrete', 
-                 end_strategy = 'default'):
+                 end_strategy = 'default',
+                 preprocess = True):
         
         self._metric_name = metric
         self._scoring_function_name = scoring_function
@@ -37,28 +38,25 @@ class MCTS:
         self._model = model
         self._time = 0
         self._iterations = 0
+        self._preprocess = preprocess
         
         if params is None:
             self._params = DefaultSettings.get_default_params()
         else:
             self._params = DefaultSettings.merge_params(params)
         
-    def fit(self, data, out_variable, preprocess = True, pos_class = 'numeric', warm_start = True,
+    def fit(self, data, out_variable, pos_class = 'numeric', warm_start = True,
                  calculations_done_conditions = None,
                  calculations_budget = None):
         
+        self._pos_class = pos_class
         if calculations_done_conditions is not None:
             self._calculations_done_condition = calculations_done_conditions
         
         if calculations_budget is not None:
             self._calculations_budget = calculations_budget
             
-        data = data.reset_index(drop=True)
-        data.columns = [str(col) for col in data.columns]
-        out_variable = out_variable.reset_index(drop=True)
-
-        if preprocess:
-            out_variable = self._preprocess_labels(out_variable, pos_class)
+        data, out_variable = self._preprocess_input(data, out_variable)
         
         if self._task == 'classification':
             self._classification_fit_start(data, out_variable, warm_start)
@@ -66,10 +64,23 @@ class MCTS:
             self._regression_fit(data, out_variable)
     
     def refit(self, data, out_variable, calculations_budget = None):
+        data, out_variable = self._preprocess_input(data, out_variable)
+        
         if calculations_budget is not None:
             self._calculations_budget = calculations_budget
             
         self._classification_fit(data, out_variable)
+    
+    def _preprocess_input(self, data, out_variable):
+        data = data.reset_index(drop=True)
+        data.columns = [str(col) for col in data.columns]
+        
+        out_variable = out_variable.reset_index(drop=True)
+        
+        if self._preprocess:
+            out_variable = self._preprocess_labels(out_variable, self._pos_class)
+            
+        return data, out_variable
     
     def _classification_fit_start(self, data, out_variable, warm_start):
         self._init_fitting_values(data)
@@ -127,7 +138,7 @@ class MCTS:
         self._best_score = 0
         self._longest_tree_branch = 0
         self._global_scores = GlobalScores()
-        self._scores_history = []
+        self._scores_history = [] 
     
     def _is_fitting_over(self):
         if(self._root._is_subtree_full):
