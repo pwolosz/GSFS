@@ -59,5 +59,8 @@ class GlobalScores:
             Name of feature
         """
         
+        if name not in self.scores['g_rave']:
+            return 0
+        
         score_info = self.scores['g_rave'][name]
         return score_info['score']/score_info['n']
