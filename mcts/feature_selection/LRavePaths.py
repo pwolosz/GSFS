@@ -41,6 +41,11 @@ class LRavePaths:
         tmp_features.add(name)
         
         indexes = list(filter(lambda i: tmp_features.issubset(self._paths[i]), range(len(self._paths))))
+        
+        # if indexes is an empty list then that means that selected path has never been visited
+        if len(indexes) == 0:
+            return 0
+        
         n = sum([self._n_vals[i] for i in indexes])
         score = sum([self._scores[i] for i in indexes])
         print(indexes)
