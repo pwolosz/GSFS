@@ -50,3 +50,25 @@ class LRavePaths:
         score = sum([self._scores[i] for i in indexes])
         print(indexes)
         return score/n
+
+    def get_t_l(self, name, used_featuers):
+        """
+        Method for getting t_l (number of iterations in computing l-RAVE)
+        Parameters
+        ----------
+        name: str
+            Name of the feature
+        used_features: set
+            Set of features in selected path
+        """
+        
+        tmp_features = used_features.copy()
+        tmp_features.add(name)
+        
+        indexes = list(filter(lambda i: tmp_features.issubset(self._paths[i]), range(len(self._paths))))
+        
+        # if indexes is an empty list then that means that selected path has never been visited
+        if len(indexes) == 0:
+            return 0
+        
+        return sum([self._n_vals[i] for i in indexes])
