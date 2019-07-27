@@ -3,15 +3,27 @@ from mcts.feature_selection.LRavePaths import *
 
 class Node:
     """Class representing node of MCTS tree."""
-    def __init__(self, used_features, feature_name, is_subtree_fully_searched = False):
+    def __init__(self, used_features, feature_name):
         self._scores = []
         self._scores_sum = 0
         self.T = 0
         features = used_features.copy()
-        features.add(feature_name)
+        if feature_name is not None:
+            features.add(feature_name)
         self._features = features
-        self.is_subtree_fully_searched = is_subtree_fully_searched
+        self._children = []
+    
+    def add_child(self, node):
+        """
+        Method for adding child node
+        Parameters
+        ----------
+        node: Node
+            Node that will be added as child
+        """
         
+        self._children.append(node)
+    
     def add_score(self, score):
         """
         Method for adding score to node
