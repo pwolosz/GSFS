@@ -1,3 +1,5 @@
+import unittest
+
 class TestNodeAdder(unittest.TestCase):
     def setUp(self):
         self._root = Node(set(),None)
