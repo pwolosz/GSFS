@@ -1,13 +1,13 @@
 from graphviz import Digraph
 from queue import *
 
-def draw_tree(root, file_name = None, view = True, view_nodes_info = False):
+def draw_tree(node_adder, file_name = None, view = True, view_nodes_info = False):
     """
     Method for drawing tree build during MCTS
     Parameters
     ----------
-    root: Node
-        Root of the tree
+    node_adder: NodeAdder
+        NodeAdder used in mcts iterations
     file_name: str
         Name of the output file, if None then the visualization won't be saved
     view: boolean
@@ -16,24 +16,18 @@ def draw_tree(root, file_name = None, view = True, view_nodes_info = False):
         
     """
     
-    q = Queue()
     dot = Digraph(comment='mcts')
 
-    q.put(root)
-    dot.node(str(id(root)), root.feature_name + '\n' + root.get_str_node_info() if view_nodes_info else root.feature_name)
-
-    while not q.empty():
-        curr_node = q.get()
-        edges = []
-        for node in curr_node.child_nodes:
-            edges.append(str(id(curr_node))+str(id(node)))
-            node_label = node.feature_name
-            
-            if view_nodes_info:
-                node_label += '\n' + node.get_str_node_info()
-            
-            dot.node(str(id(node)), node_label)
-            dot.edge(str(id(curr_node)), str(id(node)))
-            q.put(node)
+    # Adding nodes
+    for key, value in node_adder._nodes_buckets.items():
+        for node in value:
+            label = node.get_label()
+            dot.node(label,label)
     
+    # Adding edges
+    for key, value in node_adder._nodes_buckets.items():
+        for node in value:
+            for child_node in node._children:
+                dot.edge(node.get_label(), child_node.get_label())
+            
     dot.render(file_name, view = view)
