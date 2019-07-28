@@ -1,55 +1,61 @@
-class LRavePaths:
+from mcts.feature_selection.LRavePaths import *
+
+class GlobalScores:
+    """Class used for getting global scores like g-RAVE and l-RAVE."""
+    
     def __init__(self):
-        self._paths = []
-        self._n_vals = []
-        self._scores= []
-        
-    def add_path_score(self, used_features, score):
+        self.scores = {'g_rave': {},
+                       'l_rave': LRavePaths()}            
+    
+    def update_score(self, used_features, score):
         """
-        Method for adding score for path made of selected nodes
+        Method for updating scores for selected path
+        Parameters:
+        used_features: set
+            Features used in current path
+        score: numeric
+            Value of the score
+        """
+        self._update_l_rave_score(used_features, score)
+        self._update_g_rave_score(used_features, score)
+    
+    def _update_l_rave_score(self, used_features, score):       
+        self.scores['l_rave'].add_path_score(used_features, score)
+        
+    def _update_g_rave_score(self, used_features, score):
+        for name in used_features:
+            if name not in self.scores['g_rave']:
+                self.scores['g_rave'][name] = {'n': 1, 'score': score}
+            else:
+                self.scores['g_rave'][name]['score'] += score
+                self.scores['g_rave'][name]['n'] += 1
+    
+    def get_l_rave_score(self, used_features):
+        """
+        Method for getting l-RAVE score for selected feature and already used features
         Parameters
         ----------
         used_features: set
-            Set of features in selected path
-        score: numeric
-            Score that was obtained with nodes from selected path
+            Set of features for which the score will be returned
         """
         
-        tmp_features = used_features.copy()
+        return self.scores['l_rave'].get_path_score(used_features)
         
-        if tmp_features not in self._paths:
-            self._paths.append(tmp_features)
-            self._n_vals.append(1)
-            self._scores.append(score)
-        else:
-            ind = self._paths.index(tmp_features)
-            self._n_vals[ind] += 1
-            self._scores[ind] += score
-    
-    def get_path_score(self, name, used_features):
+    def get_g_rave_score(self, name):
         """
-        Method for getting score for selected path and feature
+        Method for getting g-RAVE score for selected feature
         Parameters
         ----------
         name: str
-            Name of the feature
-        used_features: set
-            Set of features in selected path
+            Name of feature
         """
         
-        tmp_features = used_features.copy()
-        tmp_features.add(name)
-        
-        indexes = list(filter(lambda i: tmp_features.issubset(self._paths[i]), range(len(self._paths))))
-        
-        # if indexes is an empty list then that means that selected path has never been visited
-        if len(indexes) == 0:
+        if name not in self.scores['g_rave']:
             return 0
         
-        n = sum([self._n_vals[i] for i in indexes])
-        score = sum([self._scores[i] for i in indexes])
-        return score/n
-
+        score_info = self.scores['g_rave'][name]
+        return score_info['score']/score_info['n']
+    
     def get_t_l(self, name, used_features):
         """
         Method for getting t_l (number of iterations in computing l-RAVE)
@@ -58,16 +64,7 @@ class LRavePaths:
         name: str
             Name of the feature
         used_features: set
-            Set of features in selected path
+            Set of already used features
         """
         
-        tmp_features = used_features.copy()
-        tmp_features.add(name)
-        
-        indexes = list(filter(lambda i: tmp_features.issubset(self._paths[i]), range(len(self._paths))))
-        
-        # if indexes is an empty list then that means that selected path has never been visited
-        if len(indexes) == 0:
-            return 0
-        
-        return sum([self._n_vals[i] for i in indexes])
+        return self.scores['l_rave'].get_t_l(name, used_features)
