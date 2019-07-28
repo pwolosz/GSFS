@@ -32,7 +32,7 @@ class ScoringFunctions():
         if(params is not None):
             self._params = params 
 
-    def get_score(self, node, global_scores):
+    def get_score(self, parent_node, node, global_scores):
         """
         Method for getting score for selected node. If the name set with init or set_scoring_function is not supported, 
         the exception will be thrown.
@@ -44,14 +44,14 @@ class ScoringFunctions():
             Object containing global scores and methods necessary to calculate the score of the node
         """
         
-        if(self._name == 'default'):
+        if(self._name == 'UCB1'):
             return self._default_scoring(node)
-        elif(self._name == 'with_variance'):
+        elif(self._name == 'UCB1_with_variance'):
             return self._var_scoring(node)
-        elif(self._name == 'g_rave'):
-            return self._g_rave_scoring(node, global_scores)
+        elif(self._name == 'UCB1_rave'):
+            return self._rave_scoring(parent_node, node, global_scores)
         else:
-            raise Exception('Error initializing MCTS object, \"' + self._name + '\" is not supported.')
+            raise Exception('Error initializing ScoringFunctions object, \"' + self._name + '\" is not supported.')
      
     def get_feature_score(self, feature_name, global_scores):
         """
@@ -76,23 +76,19 @@ class ScoringFunctions():
         if(node._parent_node == None or node.T == 0):
             return float("Inf")
         else:
-            return node.get_score() + math.sqrt(self._params['c_e'] * math.log(node._parent_node.T)/node.T)
+            return node.get_score() + math.sqrt(self._params['c_e'] * math.log(node._parent_node.T)/node.T)     
         
-    def _g_rave_scoring(self, node, global_scores):
-        g_scores = global_scores.scores['g_rave']
+    def _rave_scoring(self, parent_node, node, global_scores):
+        t_l = global_scores.get_t_l(node._features)
+        c = self._params['c']
+        c_l = self._params['c_l']
+        c_e = self._params['c_e']
+        alpha = c/(c + node.T)
+        beta = c_l/(c_l + t_l)
+        new_feature = node._features.difference(parent_node._features).pop()
         
-        if(node._parent_node == None or node.T == 0):
-            if(node.feature_name not in g_scores):
-                return float("Inf")
-            else:
-                return g_scores[node.feature_name]['score']
-        else:
-            c = self._params['c']
-            c_l = self._params['c_l']
-            alpha = c/(c + node.T)
-            beta = c_l/(c_l + node.T)
-
-            return ((1 - alpha) * node.get_score() + 
-                alpha * g_scores[node.feature_name]['score'] + 
-                math.sqrt(self._params['c_e'] * math.log(node._parent_node.T)/node.T) *
-                min(0.25, node.get_variance() + math.sqrt(2 * math.log(node._parent_node.T)/node.T)))      
+        return ((1 - alpha) * node.get_score() + 
+                alpha * ((1 - beta) * global_scores.get_l_rave_score(node._features) + beta * global_scores.get_g_rave_score(new_feature)) +
+                math.sqrt(c_e * math.log(parent_node.T)/node.T) * 
+                min(0.25, node.get_variance() + node.get_variance() + math.sqrt(2 * math.log(parent_node.T)/node.T)))
+        

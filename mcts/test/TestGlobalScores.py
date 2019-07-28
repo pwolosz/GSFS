@@ -24,3 +24,11 @@ class TestGlobalScores(unittest.TestCase):
         self.assertEqual(global_scores.get_l_rave_score(set(['B','A'])), (0.6+0.7+0.9)/3)
         self.assertEqual(global_scores.get_l_rave_score(set(['B','C'])), (0.5+0.9)/2)
         self.assertEqual(global_scores.get_l_rave_score(set(['A','C','B'])), 0.9)
+        
+        self.assertEqual(global_scores.get_t_l(set('A')), 6)
+        self.assertEqual(global_scores.get_t_l(set('B')), 5)
+        self.assertEqual(global_scores.get_t_l(set('C')), 5)
+        self.assertEqual(global_scores.get_t_l(set(['A','B'])), 3)
+        self.assertEqual(global_scores.get_t_l(set(['B','A'])), 3)
+        self.assertEqual(global_scores.get_t_l(set(['B','C'])), 2)
+        self.assertEqual(global_scores.get_t_l(set(['A','C','B'])), 1)
