@@ -29,3 +29,5 @@ class NodeAdder:
             for next_node in self._nodes_buckets[len(node._features) + 2]:
                 if new_node._features.issubset(next_node._features):
                     new_node.add_child(next_node)
+                    
+        return new_node

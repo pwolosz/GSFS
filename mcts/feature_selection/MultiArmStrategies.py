@@ -15,10 +15,10 @@ class MultiArmStrategies:
         """
         
         self._name = name
-        self._all_node_names = all_node_names
+        self._all_features_names = all_features_names
         self._params = params
         
-    def multiarm_strategy(self, node, used_features, scoring_functions, global_scores, params):
+    def multiarm_strategy(self, node, scoring_functions, global_scores, node_adder):
         """
         Method for getting next node in current search.
         Parameters
@@ -36,65 +36,58 @@ class MultiArmStrategies:
         """
         
         if self._name == 'continuous':
-            return self._continuous_strategy(node, used_features, scoring_functions, global_scores)
+            return self._continuous_strategy(node, scoring_functions, global_scores)
         elif self._name == 'discrete':
-            return self._discrete_strategy(node, used_features, scoring_functions, global_scores)
+            return self._discrete_strategy(node, scoring_functions, global_scores, node_adder)
         else:
             raise Exception("Error getting multiarm strategy, strategy \'" + self._name + "\' is not supported.")   
     
-    def _continuous_strategy(self, node, used_features, scoring_functions, global_scores):
+    def _continuous_strategy(self, node, scoring_functions, global_scores):
         if(len(node.child_nodes) == 0):
             self._add_all_child_nodes(node, used_features)
             return node.child_nodes[0]
         else:
             return self._get_best_node(node, scoring_functions, global_scores)
 
-    def _discrete_strategy(self, node, used_features, scoring_functions, global_scores):
-        if (len(node.child_nodes) == 0 or self._should_add_child(node)) and not node.all_children_added:
-            return self._add_child_node(node, scoring_functions, global_scores, used_features)
+    def _discrete_strategy(self, node, scoring_functions, global_scores, node_adder):
+        if len(node.child_nodes) == 0 or self._should_add_child(node):
+            return self._add_child_node(node, scoring_functions, global_scores, node_adder)
         else:
             return self._get_best_node(node, scoring_functions, global_scores)
                 
         
     def _should_add_child(self, node):
-        return (int(math.pow(node.T, self._params['b_T'])) - int(math.pow(node.T - 1, self._params['b_T']))) > 0
+        return (((int(math.pow(node.T, self._params['b_T'])) - int(math.pow(node.T - 1, self._params['b_T']))) > 0) and
+               not self._all_features_names.issubset(node._features))
     
     def _get_best_node(self, node, scoring_functions, global_scores):
         best_score = 0
         best_node = None
         tmp_score = 0
             
-        for child_node in node.child_nodes:
-            if(not child_node._is_subtree_full):
-                score = scoring_functions.get_score(child_node, global_scores)
-                if(score > best_score):
-                    best_score = score
-                    best_node = child_node
+        for child_node in node._children:
+            score = scoring_functions.get_score(node, child_node, global_scores)
+            if score > best_score:
+                best_score = score
+                best_node = child_node
+                
         return best_node
     
-    def _add_child_node(self, node, scoring_functions, global_scores, used_features):
+    def _add_child_node(self, node, scoring_functions, global_scores, node_adder):
         best_score = 0
         best_feature = None
-        not_used_features = self._all_node_names - used_features
-        
-        for tmp_node in node.child_nodes:
-            not_used_features.remove(tmp_node.feature_name)
-        
+        not_used_features = self._all_features_names - node._features
         
         for feature in not_used_features:
-            curr_score = scoring_functions.get_feature_score(feature, global_scores)
-            if curr_score > best_score:
-                best_score = curr_score
+            score = scoring_functions.get_new_node_score(feature, node._features, global_scores)
+            if score > best_score:
                 best_feature = feature
-  
-
-        if len(not_used_features) == 1:
-            node.all_children_added = True
+                best_score = score
         
         if best_feature is not None:
-            return node.add_child_node(best_feature)
-        else:
-            return node.add_child_node((self._all_node_names - used_features)[0])
+            return node_adder.add_node(node._features, best_feature)
+            
+        return node_adder.add_node(node._features, not_used_features.pop())
         
     def _add_all_child_nodes(self, node, used_features):
         node.add_child_nodes(self._all_node_names - used_features)   
