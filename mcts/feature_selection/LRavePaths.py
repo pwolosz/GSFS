@@ -48,10 +48,9 @@ class LRavePaths:
         
         n = sum([self._n_vals[i] for i in indexes])
         score = sum([self._scores[i] for i in indexes])
-        print(indexes)
         return score/n
 
-    def get_t_l(self, name, used_featuers):
+    def get_t_l(self, name, used_features):
         """
         Method for getting t_l (number of iterations in computing l-RAVE)
         Parameters
