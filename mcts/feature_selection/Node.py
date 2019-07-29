@@ -59,3 +59,12 @@ class Node:
         avg score: {:.4f}
         var: {:.4f}
         '''.format(self.T, (self._scores_sum/self.T if self.T != 0 else 0), (np.var(self._scores) if self.T != 0 else 0))
+    
+    def get_used_features_in_children(self):
+        used_features = set()
+        used_features.update(self._features)
+        
+        for node in self._children:
+            used_features.update(node._features)
+            
+        return used_features

@@ -56,15 +56,13 @@ class GlobalScores:
         score_info = self.scores['g_rave'][name]
         return score_info['score']/score_info['n']
     
-    def get_t_l(self, name, used_features):
+    def get_t_l(self, used_features):
         """
         Method for getting t_l (number of iterations in computing l-RAVE)
         Parameters
         ----------
-        name: str
-            Name of the feature
         used_features: set
             Set of already used features
         """
         
-        return self.scores['l_rave'].get_t_l(name, used_features)
+        return self.scores['l_rave'].get_t_l(used_features)

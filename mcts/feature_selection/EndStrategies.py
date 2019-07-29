@@ -1,7 +1,7 @@
 class EndStrategies:
     """Class for strategies of ending search."""
     
-    def __init__(self, name):
+    def __init__(self, name, features_count):
         """
         Parameters
         ----------
@@ -10,8 +10,9 @@ class EndStrategies:
         """
         
         self._name = name
+        self._features_count = features_count
     
-    def are_calculations_over(self, node, params):
+    def are_calculations_over(self, node):
         """
         Method for getting information whether the current iteration of search is over. 
         If the name set in the init is not correct then the exception is thrown.
@@ -24,15 +25,11 @@ class EndStrategies:
         """
         
         if(self._name == 'default'):
-            return self._first_new_strategy(node, params)
+            return self._first_new_strategy(node)
         else:
             raise Exception("Error getting end strategy, end strategy \'" + self._name + "\'")
         
-    def _first_new_strategy(self, node, params):
-        if(node.T > 0 and not node._is_subtree_full):
-            return False
-        else:
-            if(node._parent_node == None):
-                return False
-            else:
-                return True
+    def _first_new_strategy(self, node):
+        if node.T > 0:
+            return self._features_count == len(node._features)
+        return True

@@ -13,7 +13,6 @@ class NodeAdder:
         feature_name: str
             Name of new feature in path
         """
-        
         new_node = Node(node._features, feature_name)    
         
         if len(node._features) + 1 not in self._nodes_buckets:

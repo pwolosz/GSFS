@@ -7,6 +7,8 @@ from mcts.feature_selection.EndStrategies import *
 from mcts.feature_selection.ScoringFunctions import *
 from mcts.feature_selection.BuildInMetrics import *
 from mcts.feature_selection.GlobalScores import *
+from mcts.feature_selection.NodeAdder import *
+from mcts.feature_selection.DrawTree import draw_tree
 import time
 from sklearn.ensemble import RandomForestClassifier
 
@@ -18,8 +20,8 @@ class MCTS:
                  calculations_done_condition = 'iterations',
                  calculations_budget = 10,
                  params = None,
-                 metric = 'acc', 
-                 scoring_function = 'g_rave', 
+                 metric = 'roc_auc', 
+                 scoring_function = 'UCB1_rave', 
                  multiarm_strategy = 'discrete', 
                  end_strategy = 'default',
                  preprocess = True):
@@ -31,7 +33,6 @@ class MCTS:
         self._best_features = None
         self._best_score = 0
         self._task = task
-        self._root = Node("")
         self._feature_names = None
         self._calculations_done_condition = calculations_done_condition
         self._calculations_budget = calculations_budget
@@ -89,7 +90,7 @@ class MCTS:
             rf = RandomForestClassifier()
             rf.fit(data, out_variable)
             for i in range(len(data.columns)):
-                self._global_scores.update_g_rave_score(data.columns[i], rf.feature_importances_[i])
+                self._global_scores.scores[data.columns[i]] = rf.feature_importances_[i]
         
         self._classification_fit(data, out_variable)
     
@@ -106,45 +107,57 @@ class MCTS:
         return None
     
     def _single_classification_iteration(self, data, out_variable):
-        used_features = set()
+        used_nodes = [None]*(self._longest_tree_branch+1)
         node = self._root
+        used_nodes[0] = node
+        used_nodes_index = 1
         is_iteration_over = False
         while not is_iteration_over:
-            node = self._multiarm_strategy.multiarm_strategy(node, used_features, self._scoring_functions, self._global_scores,self._params)
-            is_iteration_over = self._end_strategy.are_calculations_over(node, self._params)
-            used_features.add(node.feature_name)
+            node = self._multiarm_strategy.multiarm_strategy(node, self._scoring_functions, 
+                                                             self._global_scores, self._node_adder)
+            is_iteration_over = self._end_strategy.are_calculations_over(node)
+            used_nodes[used_nodes_index] = node
+            used_nodes_index += 1
+            #used_features.add(node.feature_name)
         
-        score = CV.cv(self._metric, self._metric_name, self._model, data, out_variable, self._params['cv'])
-        node.update_scores_up(score, self._global_scores)
+        score = CV.cv(self._metric, self._metric_name, self._model, data[list(node._features)], 
+                      out_variable, self._params['cv'])
+        self._update_nodes(used_nodes, score)
+        self._global_scores.update_score(node._features, score)
+        #node.update_scores_up(score, self._global_scores)
         if(score > self._best_score):
             self._best_score = score
-            self._best_features = used_features
-            self._scores_history.append({'score': score, 'features': used_features})
+            self._best_features = list(node._features)
+            self._scores_history.append({'score': score, 'features': self._best_features})
         
-        if(self._longest_tree_branch < len(used_features)):
-            self._longest_tree_branch = len(used_features)
+        if(self._longest_tree_branch < used_nodes_index):
+            self._longest_tree_branch = used_nodes_index
 
+    
+    def _update_nodes(self, used_nodes, score):
+        for i in range(len(used_nodes)):
+            if used_nodes[i] is None:
+                return
+            used_nodes[i].add_score(score)
     
     def _single_regression_iteration(self):
         return None
     
     def _init_fitting_values(self, data):
+        self._root = Node(set(), None)
         self._feature_names = set(data.columns)
         self._multiarm_strategy = MultiArmStrategies(self._multiarm_strategy_name, self._feature_names, self._params)
-        self._end_strategy = EndStrategies(self._end_strategy_name)
+        self._end_strategy = EndStrategies(self._end_strategy_name, len(self._feature_names))
         self._scoring_functions = ScoringFunctions(self._scoring_function_name, self._params)
         self._metric = BuildInMetrics().get_metric(self._metric_name)
         self._best_features = None
         self._best_score = 0
-        self._longest_tree_branch = 0
+        self._longest_tree_branch = 1
         self._global_scores = GlobalScores()
         self._scores_history = [] 
+        self._node_adder = NodeAdder(self._root)
     
     def _is_fitting_over(self):
-        if(self._root._is_subtree_full):
-            print('Whole tree searched, finishing prematurely')
-            return True
-        
         if(self._calculations_done_condition == 'iterations'):
             self._iterations += 1
             return self._iterations > self._calculations_budget 
@@ -174,6 +187,9 @@ class MCTS:
     
     def get_number_of_iterations(self):
         return self._global_scores.scores['g_rave']['']['n']
+    
+    def draw_tree(self):
+        draw_tree(self._node_adder)
     
     def save_stats_to_file(self, path):
         if self._best_features is None:
