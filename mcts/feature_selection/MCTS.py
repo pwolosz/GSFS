@@ -128,7 +128,12 @@ class MCTS:
         if(score > self._best_score):
             self._best_score = score
             self._best_features = list(node._features)
-            self._scores_history.append({'score': score, 'features': self._best_features})
+            self._scores_history.append({
+                'score': score, 
+                'features': self._best_features,
+                'time': time.time() - self._time,
+                'iteration': self._iterations
+            })
         
         if(self._longest_tree_branch < used_nodes_index):
             self._longest_tree_branch = used_nodes_index
@@ -188,8 +193,8 @@ class MCTS:
     def get_number_of_iterations(self):
         return self._global_scores.scores['g_rave']['']['n']
     
-    def draw_tree(self):
-        draw_tree(self._node_adder)
+    def draw_tree(self, file_name = None, view = True, view_nodes_info = False):
+        draw_tree(self._node_adder, file_name, view, view_nodes_info)
     
     def save_stats_to_file(self, path):
         if self._best_features is None:
@@ -198,7 +203,6 @@ class MCTS:
         with open(path, 'w') as f:
             f.write('Best score: ' + str(self._best_score))
             f.write('\nBest features: ' + ', '.join(self._best_features))
-            f.write('\nFull tree searched: ' + str(self._root._is_subtree_full))
             f.write('\nLongest branch: ' + str(self._longest_tree_branch))
             f.write('\nMetric name: ' + str(self._metric_name))
             f.write('\nScoring function: ' + str(self._scoring_function_name))
@@ -209,7 +213,10 @@ class MCTS:
             
             f.write('\nScores history: ')
             for sc in self._scores_history:
-                f.write('\nscore: ' + str(sc['score']) + ', features: ' + ', '.join(sc['features']))
+                f.write('\nscore: ' + str(sc['score']) + 
+                        ', time:' + str(sc['time']) + 
+                        ', iteration:' + str(sc['iteration']) +
+                        ', features: ' + ', '.join(sc['features']))
             
             f.write('\nParameters: ')
             for key, value in self._params.items():
