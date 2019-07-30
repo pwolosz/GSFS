@@ -21,13 +21,19 @@ def draw_tree(node_adder, file_name = None, view = True, view_nodes_info = False
     # Adding nodes
     for key, value in node_adder._nodes_buckets.items():
         for node in value:
-            label = node.get_label()
-            dot.node(label,label)
+            node_id = node.get_label()
+            label = node_id
+
+            if view_nodes_info:
+                label += '\n' + node.get_str_node_info()
+            
+            dot.node(node_id,label)
     
     # Adding edges
     for key, value in node_adder._nodes_buckets.items():
         for node in value:
             for child_node in node._children:
+                
                 dot.edge(node.get_label(), child_node.get_label())
             
     dot.render(file_name, view = view)
