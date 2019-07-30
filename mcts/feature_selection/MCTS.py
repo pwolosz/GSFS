@@ -16,7 +16,6 @@ class MCTS:
     """Class for MCTS"""
     def __init__(self, 
                  model,
-                 task = 'classification',
                  calculations_done_condition = 'iterations',
                  calculations_budget = 10,
                  params = None,
@@ -32,7 +31,6 @@ class MCTS:
         self._end_strategy_name = end_strategy
         self._best_features = None
         self._best_score = 0
-        self._task = task
         self._feature_names = None
         self._calculations_done_condition = calculations_done_condition
         self._calculations_budget = calculations_budget
@@ -59,10 +57,7 @@ class MCTS:
             
         data, out_variable = self._preprocess_input(data, out_variable)
         
-        if self._task == 'classification':
-            self._classification_fit_start(data, out_variable, warm_start)
-        else:
-            self._regression_fit(data, out_variable)
+        self._classification_fit_start(data, out_variable, warm_start)
     
     def refit(self, data, out_variable, calculations_budget = None):
         data, out_variable = self._preprocess_input(data, out_variable)
@@ -103,9 +98,6 @@ class MCTS:
         
         self._model.fit(data.loc[:, self._best_features], out_variable)
     
-    def _regression_fit(self, data, out_variable):
-        return None
-    
     def _single_classification_iteration(self, data, out_variable):
         used_nodes = [None]*(self._longest_tree_branch+1)
         node = self._root
@@ -118,13 +110,13 @@ class MCTS:
             is_iteration_over = self._end_strategy.are_calculations_over(node)
             used_nodes[used_nodes_index] = node
             used_nodes_index += 1
-            #used_features.add(node.feature_name)
+            
         
         score = CV.cv(self._metric, self._metric_name, self._model, data[list(node._features)], 
                       out_variable, self._params['cv'])
         self._update_nodes(used_nodes, score)
         self._global_scores.update_score(node._features, score)
-        #node.update_scores_up(score, self._global_scores)
+        
         if(score > self._best_score):
             self._best_score = score
             self._best_features = list(node._features)
@@ -145,9 +137,6 @@ class MCTS:
                 return
             used_nodes[i].add_score(score)
     
-    def _single_regression_iteration(self):
-        return None
-    
     def _init_fitting_values(self, data):
         self._root = Node(set(), None)
         self._feature_names = set(data.columns)
@@ -163,8 +152,8 @@ class MCTS:
         self._node_adder = NodeAdder(self._root)
     
     def _is_fitting_over(self):
-        if(self._calculations_done_condition == 'iterations'):
-            self._iterations += 1
+        self._iterations += 1
+        if self._calculations_done_condition == 'iterations':
             return self._iterations > self._calculations_budget 
         else:
             return (time.time() - self._time) > self._calculations_budget 
@@ -189,9 +178,6 @@ class MCTS:
     def one_hot_encode(self, data):
         data.columns = [str(col) for col in data.columns]
         return Preprocessing.one_hot_encode(data)
-    
-    def get_number_of_iterations(self):
-        return self._global_scores.scores['g_rave']['']['n']
     
     def draw_tree(self, file_name = None, view = True, view_nodes_info = False):
         draw_tree(self._node_adder, file_name, view, view_nodes_info)
@@ -221,4 +207,4 @@ class MCTS:
             f.write('\nParameters: ')
             for key, value in self._params.items():
                 f.write('\n' + key + ': ' + str(value))
-                
+     
