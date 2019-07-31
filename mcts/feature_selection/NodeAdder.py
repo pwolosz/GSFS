@@ -1,3 +1,5 @@
+from mcts.feature_selection.Node import *
+
 class NodeAdder:
     def __init__(self, root):
         self._nodes_buckets = {}
