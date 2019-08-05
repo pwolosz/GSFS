@@ -1,3 +1,5 @@
+import pandas as pd
+
 class LRavePaths:
     def __init__(self):
         self._paths = []
@@ -61,3 +63,11 @@ class LRavePaths:
             return 0
         
         return sum([self._n_vals[i] for i in indexes])
+    
+    def get_scores_dataframe(self):
+        return pd.DataFrame({
+            'features': [','.join(s) for s in self._paths],
+            'n': self._n_vals, 
+            'scores': self._scores,
+            'score': [x/y for x, y in zip(self._scores, self._n_vals)]
+        })

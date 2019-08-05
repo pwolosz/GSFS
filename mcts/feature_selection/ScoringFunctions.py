@@ -54,15 +54,9 @@ class ScoringFunctions():
             raise Exception('Error initializing ScoringFunctions object, \"' + self._name + '\" is not supported.')
      
     def get_new_node_score(self, feature_name, node, global_scores):
-        """
-        Methods for gettings score for selected feature.
-        Parameters
-        ----------
-        feature_name: str
-            Name of the feature
-        global_scores: GlobalScores
-            Object containing global scores and methods necessary to calculate the score of the node
-        """
+        
+        if global_scores.get_n(feature_name) == 0:
+            return float('Inf')
         
         g_rave = global_scores.get_g_rave_score(feature_name)
         tmp_features = node._features.copy()
@@ -72,7 +66,6 @@ class ScoringFunctions():
         c_l = self._params['c_l']
         alpha = c/(c + node.T)
         beta = c_l/(c_l + global_scores.get_t_l(tmp_features))
-        
         return (1 - beta) * l_rave + beta * g_rave
     
     def _default_scoring(self, node):

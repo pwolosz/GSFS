@@ -7,7 +7,7 @@ class Preprocessing:
     @staticmethod
     def relabel_data(labels, pos_label = None):
         """
-        Method for getting transformed labels, which mean changing all positive class labels (pos_label value)
+        Method for getting transformed labels, which means changing all positive class labels (pos_label value)
         are changed to 1, other classes are changed to 0.
         
         Parameters

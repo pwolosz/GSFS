@@ -1,4 +1,5 @@
 import math
+import random
 
 class MultiArmStrategies:
     """Class for representing strategies used for selecting next node to visit in MCTS. 
@@ -36,18 +37,14 @@ class MultiArmStrategies:
         """
         
         if self._name == 'continuous':
-            return self._continuous_strategy(node, scoring_functions, global_scores)
+            return self._continuous_strategy(node, scoring_functions, global_scores, node_adder)
         elif self._name == 'discrete':
             return self._discrete_strategy(node, scoring_functions, global_scores, node_adder)
         else:
             raise Exception("Error getting multiarm strategy, strategy \'" + self._name + "\' is not supported.")   
     
-    def _continuous_strategy(self, node, scoring_functions, global_scores):
-        if(len(node.child_nodes) == 0):
-            self._add_all_child_nodes(node, used_features)
-            return node.child_nodes[0]
-        else:
-            return self._get_best_node(node, scoring_functions, global_scores)
+    def _continuous_strategy(self, node, scoring_functions, global_scores, node_adder):
+        return self._get_best_node_continuous(node, scoring_functions, global_scores, node_adder)
 
     def _discrete_strategy(self, node, scoring_functions, global_scores, node_adder):
         if self._should_add_child(node):
@@ -75,6 +72,32 @@ class MultiArmStrategies:
        
         return best_node
     
+    def _get_best_node_continuous(self, node, scoring_functions, global_scores, node_adder):
+        best_score = -1
+        best_node = None
+        not_used_features = self._all_features_names - node._features - node.get_used_features_in_children()
+        add_node = False
+        
+        for child_node in node._children:
+            score = scoring_functions.get_score(node, child_node, global_scores)
+           
+            if score > best_score:
+                best_score = score
+                best_node = child_node
+               
+        for feature in not_used_features:
+            score = scoring_functions.get_new_node_score(feature, node, global_scores)
+            
+            if score > best_score:
+                best_score = score
+                add_node = True
+                best_feature = feature
+      
+        if add_node:
+            best_node = node_adder.add_node(node, best_feature)
+            
+        return best_node
+    
     def _add_child_node(self, node, scoring_functions, global_scores, node_adder):
         best_score = 0
         best_feature = None
@@ -92,7 +115,7 @@ class MultiArmStrategies:
         if best_feature is not None:
             return node_adder.add_node(node, best_feature)
         
-        return node_adder.add_node(node, not_used_features.pop())
+        return node_adder.add_node(node, list(not_used_features)[random.randint(0,len(not_used_features))])
         
     def _add_all_child_nodes(self, node, used_features):
         node.add_child_nodes(self._all_node_names - used_features)   

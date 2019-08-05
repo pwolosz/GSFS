@@ -59,11 +59,11 @@ class MCTS:
         
         self._classification_fit_start(data, out_variable, warm_start)
     
-    def refit(self, data, out_variable, calculations_budget = None):
+    def refit(self, data, out_variable, calculations_budget):
         data, out_variable = self._preprocess_input(data, out_variable)
         
         if calculations_budget is not None:
-            self._calculations_budget = calculations_budget
+            self._calculations_budget += calculations_budget
             
         self._classification_fit(data, out_variable)
     
@@ -85,8 +85,8 @@ class MCTS:
             rf = RandomForestClassifier()
             rf.fit(data, out_variable)
             for i in range(len(data.columns)):
-                self._global_scores.scores[data.columns[i]] = rf.feature_importances_[i]
-        
+                self._global_scores._update_g_rave_score([data.columns[i]], rf.feature_importances_[i])
+
         self._classification_fit(data, out_variable)
     
     def _classification_fit(self, data, out_variable):
@@ -109,8 +109,7 @@ class MCTS:
                                                              self._global_scores, self._node_adder)
             is_iteration_over = self._end_strategy.are_calculations_over(node)
             used_nodes[used_nodes_index] = node
-            used_nodes_index += 1
-            
+            used_nodes_index += 1    
         
         score = CV.cv(self._metric, self._metric_name, self._model, data[list(node._features)], 
                       out_variable, self._params['cv'])
@@ -120,12 +119,12 @@ class MCTS:
         if(score > self._best_score):
             self._best_score = score
             self._best_features = list(node._features)
-            self._scores_history.append({
+            self._scores_history = self._scores_history.append({
                 'score': score, 
                 'features': self._best_features,
                 'time': time.time() - self._time,
                 'iteration': self._iterations
-            })
+            },ignore_index=True)
         
         if(self._longest_tree_branch < used_nodes_index):
             self._longest_tree_branch = used_nodes_index
@@ -148,15 +147,27 @@ class MCTS:
         self._best_score = 0
         self._longest_tree_branch = 1
         self._global_scores = GlobalScores()
-        self._scores_history = [] 
+        self._scores_history = pd.DataFrame(columns=['score','features','time','iteration'])
         self._node_adder = NodeAdder(self._root)
     
     def _is_fitting_over(self):
         self._iterations += 1
+        if self._iterations % 20 == 0:
+            print('Iterations done: ' + str(self._iterations))
+            
         if self._calculations_done_condition == 'iterations':
             return self._iterations > self._calculations_budget 
         else:
             return (time.time() - self._time) > self._calculations_budget 
+    
+    def get_best_features(self):
+        return self._best_features
+    
+    def get_best_score(self):
+        return self._best_score
+    
+    def get_search_history(self):
+        return self._scores_history
     
     def _preprocess_labels(self, labels, pos_class):
         if pos_class == 'numeric':
@@ -182,11 +193,11 @@ class MCTS:
     def draw_tree(self, file_name = None, view = True, view_nodes_info = False):
         draw_tree(self._node_adder, file_name, view, view_nodes_info)
     
-    def save_stats_to_file(self, path):
+    def save_stats_to_files(self, path):
         if self._best_features is None:
             raise('Model not trained, please fit the model first')
            
-        with open(path, 'w') as f:
+        with open((path + '.txt'), 'w') as f:
             f.write('Best score: ' + str(self._best_score))
             f.write('\nBest features: ' + ', '.join(self._best_features))
             f.write('\nLongest branch: ' + str(self._longest_tree_branch))
@@ -198,13 +209,11 @@ class MCTS:
             f.write('\nCalculations budget: ' + str(self._calculations_budget))
             
             f.write('\nScores history: ')
-            for sc in self._scores_history:
-                f.write('\nscore: ' + str(sc['score']) + 
-                        ', time:' + str(sc['time']) + 
-                        ', iteration:' + str(sc['iteration']) +
-                        ', features: ' + ', '.join(sc['features']))
             
             f.write('\nParameters: ')
             for key, value in self._params.items():
                 f.write('\n' + key + ': ' + str(value))
-     
+                
+        self.get_search_history().to_csv(path + '.csv')
+        self._global_scores.get_g_rave_dataframe().to_csv(path + '_g_rave.csv')
+        self._global_scores.get_l_rave_dataframe().to_csv(path + '_l_rave.csv')

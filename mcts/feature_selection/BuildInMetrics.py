@@ -19,7 +19,7 @@ class BuildInMetrics:
         name: str
             name of the metric
         """
-		
+
         if name in self._metrics:
             return self._metrics[name]
         else:

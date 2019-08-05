@@ -1,4 +1,5 @@
 from mcts.feature_selection.LRavePaths import *
+import pandas as pd
 
 class GlobalScores:
     """Class used for getting global scores like g-RAVE and l-RAVE."""
@@ -56,6 +57,12 @@ class GlobalScores:
         score_info = self.scores['g_rave'][name]
         return score_info['score']/score_info['n']
     
+    def get_n(self, feature):
+        if feature not in self.scores['g_rave']:
+            return 0
+        
+        return self.scores['g_rave'][feature]['n']
+    
     def get_t_l(self, used_features):
         """
         Method for getting t_l (number of iterations in computing l-RAVE)
@@ -66,3 +73,22 @@ class GlobalScores:
         """
         
         return self.scores['l_rave'].get_t_l(used_features)
+    
+    def get_l_rave_dataframe(self):
+        return self.scores['l_rave'].get_scores_dataframe()
+        
+    def get_g_rave_dataframe(self):
+        names = []
+        n = []
+        scores = []
+        for k,v in self.scores['g_rave'].items():
+            names.append(k)
+            n.append(v['n'])
+            scores.append(v['score'])
+            
+        return pd.DataFrame({
+            'feature': names,
+            'n': n,
+            'scores': scores,
+            'score':[x/y for x, y in zip(scores, n)]
+        })
