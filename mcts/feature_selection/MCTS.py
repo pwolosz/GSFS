@@ -62,8 +62,10 @@ class MCTS:
     def refit(self, data, out_variable, calculations_budget):
         data, out_variable = self._preprocess_input(data, out_variable)
         
-        if calculations_budget is not None:
-            self._calculations_budget += calculations_budget
+        if self._calculations_done_condition == 'iterations':
+            self._calculations_budget += calculations_budget + 1
+        else:
+            self._calculations_budget = calculations_budget
             
         self._classification_fit(data, out_variable)
     
@@ -90,7 +92,6 @@ class MCTS:
         self._classification_fit(data, out_variable)
     
     def _classification_fit(self, data, out_variable):
-        self._iterations = 0
         self._time = time.time()
         
         while not self._is_fitting_over():
@@ -149,6 +150,7 @@ class MCTS:
         self._global_scores = GlobalScores()
         self._scores_history = pd.DataFrame(columns=['score','features','time','iteration'])
         self._node_adder = NodeAdder(self._root)
+        self._time = time.time()
     
     def _is_fitting_over(self):
         self._iterations += 1
