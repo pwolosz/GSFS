@@ -57,7 +57,7 @@ class GlobalScores:
         score_info = self.scores['g_rave'][name]
         return score_info['score']/score_info['n']
     
-    def get_n(self, feature):
+    def get_n(self, name):
         if feature not in self.scores['g_rave']:
             return 0
         

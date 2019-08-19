@@ -9,6 +9,8 @@ from mcts.feature_selection.BuildInMetrics import *
 from mcts.feature_selection.GlobalScores import *
 from mcts.feature_selection.NodeAdder import *
 from mcts.feature_selection.DrawTree import draw_tree
+from mcts.feature_selection.TrainTestScore import *
+
 import time
 from sklearn.ensemble import RandomForestClassifier
 
@@ -23,6 +25,7 @@ class MCTS:
                  scoring_function = 'UCB1_rave', 
                  multiarm_strategy = 'discrete', 
                  end_strategy = 'default',
+                 with_cv = True,
                  preprocess = True):
         
         self._metric_name = metric
@@ -38,13 +41,16 @@ class MCTS:
         self._time = 0
         self._iterations = 0
         self._preprocess = preprocess
+        self._with_cv = with_cv
+        
+        print('Using cross-validation: ' + str(with_cv))
         
         if params is None:
             self._params = DefaultSettings.get_default_params()
         else:
             self._params = DefaultSettings.merge_params(params)
         
-    def fit(self, data, out_variable, pos_class = 'numeric', warm_start = True,
+    def fit(self, data, out_variable, pos_class = 'numeric', warm_start = True, 
                  calculations_done_conditions = None,
                  calculations_budget = None):
         
@@ -112,8 +118,7 @@ class MCTS:
             used_nodes[used_nodes_index] = node
             used_nodes_index += 1    
         
-        score = CV.cv(self._metric, self._metric_name, self._model, data[list(node._features)], 
-                      out_variable, self._params['cv'])
+        score = self._get_score_for_features(data[list(node._features)], out_variable)
         self._update_nodes(used_nodes, score)
         self._global_scores.update_score(node._features, score)
         
@@ -136,6 +141,14 @@ class MCTS:
             if used_nodes[i] is None:
                 return
             used_nodes[i].add_score(score)
+    
+    def _get_score_for_features(self, data, out_variable):
+        if self._with_cv:
+            return CV.cv(self._metric, self._metric_name, self._model, data, out_variable, self._params['cv'])
+            
+        return TrainTestScore.train_test_score(self._metric, self._metric_name, 
+                                                   self._model, data, out_variable, self._params['test_size'])
+            
     
     def _init_fitting_values(self, data):
         self._root = Node(set(), None)
@@ -209,6 +222,7 @@ class MCTS:
             f.write('\nEnd strategy: ' + str(self._end_strategy_name))
             f.write('\nCalculations done condition: ' + str(self._calculations_done_condition))
             f.write('\nCalculations budget: ' + str(self._calculations_budget))
+            f.write('\nWith cv: ' + str(self._with_cv))
             
             f.write('\nScores history: ')
             

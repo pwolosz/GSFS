@@ -10,7 +10,8 @@ class DefaultSettings:
             "c": 1,
             "c_l": 1,
             "cv": 4,
-            "b_T": 0.5
+            "b_T": 0.5,
+            "test_size": 0.25
         }
     
     @staticmethod
