@@ -1,4 +1,4 @@
-from mcts.feature_selection.LRavePaths import *
+from gsfs.feature_selection.LRavePaths import *
 import pandas as pd
 
 class GlobalScores:

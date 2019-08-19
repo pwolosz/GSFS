@@ -1,21 +1,21 @@
-from mcts.feature_selection.Node import *
-from mcts.feature_selection.DefaultSettings import *
-from mcts.feature_selection.CV import *
-from mcts.feature_selection.Preprocessing import *
-from mcts.feature_selection.MultiArmStrategies import *
-from mcts.feature_selection.EndStrategies import *
-from mcts.feature_selection.ScoringFunctions import *
-from mcts.feature_selection.BuildInMetrics import *
-from mcts.feature_selection.GlobalScores import *
-from mcts.feature_selection.NodeAdder import *
-from mcts.feature_selection.DrawTree import draw_tree
-from mcts.feature_selection.TrainTestScore import *
+from gsfs.feature_selection.Node import *
+from gsfs.feature_selection.DefaultSettings import *
+from gsfs.feature_selection.CV import *
+from gsfs.feature_selection.Preprocessing import *
+from gsfs.feature_selection.MultiArmStrategies import *
+from gsfs.feature_selection.EndStrategies import *
+from gsfs.feature_selection.ScoringFunctions import *
+from gsfs.feature_selection.BuildInMetrics import *
+from gsfs.feature_selection.GlobalScores import *
+from gsfs.feature_selection.NodeAdder import *
+from gsfs.feature_selection.DrawTree import draw_tree
+from gsfs.feature_selection.TrainTestScore import *
 
 import time
 from sklearn.ensemble import RandomForestClassifier
 
-class MCTS:
-    """Class for MCTS"""
+class GSFS:
+    """Class for GSFS"""
     def __init__(self, 
                  model,
                  calculations_done_condition = 'iterations',

@@ -1,4 +1,4 @@
-from mcts.feature_selection.Node import *
+from gsfs.feature_selection.Node import *
 
 class NodeAdder:
     def __init__(self, root):

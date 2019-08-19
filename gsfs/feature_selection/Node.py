@@ -1,5 +1,5 @@
 import numpy as np
-from mcts.feature_selection.LRavePaths import *
+from gsfs.feature_selection.LRavePaths import *
 
 class Node:
     """Class representing node of MCTS tree."""
