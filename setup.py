@@ -11,6 +11,6 @@ setup(name='GSFS',
       install_requires=[
 	'numpy==1.14.2',
 	'pandas==0.23.4',
-	'sklearn==0.20.2',
+	'scikit-learn==0.20.2',
 	'graphviz==0.8.4',
 	])
