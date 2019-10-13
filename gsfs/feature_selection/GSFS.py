@@ -18,8 +18,8 @@ class GSFS:
     """Class for GSFS"""
     def __init__(self, 
                  model,
-                 calculations_done_condition = 'iterations',
                  calculations_budget = 10,
+                 calculations_done_condition = 'iterations',
                  params = None,
                  metric = 'roc_auc', 
                  scoring_function = 'UCB1_rave', 
@@ -167,13 +167,18 @@ class GSFS:
     
     def _is_fitting_over(self):
         self._iterations += 1
-        if self._iterations % 20 == 0:
-            print('Iterations done: ' + str(self._iterations))
-            
+        self._print_calculations_info_if_needed()
+        
         if self._calculations_done_condition == 'iterations':
             return self._iterations > self._calculations_budget 
         else:
             return (time.time() - self._time) > self._calculations_budget 
+    
+    def _print_calculations_info_if_needed(self):
+        calc_interval = self._calculations_budget/100
+        
+        if int(((self._iterations)/calc_interval)-((self._iterations-1)/calc_interval)) > 0:
+            print(str(self._iterations) + '/' + str(self._calculations_budget))
     
     def get_best_features(self):
         return self._best_features
@@ -209,6 +214,14 @@ class GSFS:
         draw_tree(self._node_adder, file_name, view, view_nodes_info)
     
     def save_stats_to_files(self, path):
+        """
+        Method for saving the stats of current run of feature selection task to file
+        
+        Parameters
+        ----------
+        path: str
+            Path of the file to which the stats will be saved
+        """
         if self._best_features is None:
             raise('Model not trained, please fit the model first')
            
