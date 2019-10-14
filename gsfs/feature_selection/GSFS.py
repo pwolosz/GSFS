@@ -15,18 +15,51 @@ import time
 from sklearn.ensemble import RandomForestClassifier
 
 class GSFS:
-    """Class for GSFS"""
+    """Class for perfoming Graph Search Feature Selection"""
     def __init__(self, 
                  model,
-                 calculations_budget = 10,
+                 calculations_budget,
                  calculations_done_condition = 'iterations',
                  params = None,
                  metric = 'roc_auc', 
                  scoring_function = 'UCB1_rave', 
                  multiarm_strategy = 'discrete', 
                  end_strategy = 'default',
-                 with_cv = True,
+                 with_cv = False,
                  preprocess = True):
+        """
+        Parameters
+        ----------
+        model: sklearn model
+            Model that implements fit, predict, predict_proba methods, used during feature selection - GSFS is a wrapper around that model
+        calculations_budget: numeric
+            Budget for calculations, it can be either time in seconds or number of iterations
+        calculations_done_condition: str
+            Information of what type of budget the algorithm consideres (available values are 'iterations' and 'time'), 
+            default value is 'iterations'
+        params: dict
+            Dictionary containing possible parameters of algorithm, the values from this dictionary will be taken
+            as overrides of default values of the parameters (DefaultSettings.get_default_params()), if nothing is provided
+            then all parameters will have default values
+        metric: str
+            Name of the metric that will be used for scoring the model's predictions, it has to be one of the metrics 
+            from BuildInMetrics ('roc_auc', 'acc,', 'f1'), default value is 'roc_auc'
+        scoring_function: str
+            Name of the scoring function used during search of the graph, possible values are 'UCB1_rave', 'UCB1_with_variance',
+            'UCB1', default value is 'UCB1_rave'
+        multiarm_strategy: str
+            Name of the strategy that will be used during adding new node to the graph, possible values are 'discrete' and
+            'continuous', default value is 'discrete'
+        end_strategy: str
+            Name of the end strategy, default one is stop on first new node
+        with_cv: boolean
+            Information whether use cross-validation during calculating model's score, if not then train-test score will be used,
+            default value is False
+        preprocess: boolean
+            Information whether use the preprocessing of input data, meaning applying one-hot encoding to the features and
+            relabeling the labels to 0 and 1
+        """
+        
         
         self._metric_name = metric
         self._scoring_function_name = scoring_function
@@ -46,13 +79,37 @@ class GSFS:
         print('Using cross-validation: ' + str(with_cv))
         
         if params is None:
+            print('No param overrides provided, using default ones')
             self._params = DefaultSettings.get_default_params()
         else:
             self._params = DefaultSettings.merge_params(params)
         
-    def fit(self, data, out_variable, pos_class = 'numeric', warm_start = True, 
+    def fit(self, data, out_variable, pos_class = 'numeric', warm_start = False, 
                  calculations_done_conditions = None,
                  calculations_budget = None):
+        
+        """
+        Method for perfoming the fitting of the feature selection algorithm.
+        
+        Parameters
+        ----------
+        data: pd.DataFrame
+            Dataset that will be used for fitting contiaing all features except the output variable
+        out_variable: pd.Series
+            Series containing output variable of the dataset
+        pos_class: str
+            Value indicating the positive class, which will be transformed to 1 and all other values from output variable
+            will be 0, by default the highest value of the output variable will be taken as positive class
+        warm_start: boolean
+            Information whether before the actual graph based feature selection the g-RAVE scores will be initialised from
+            feature_importance of RandomForestClassifier
+        calculations_done_condition: str
+            Information of what type of budget the algorithm consideres (available values are 'iterations' and 'time'), 
+            default value is taken from constructor
+        calculations_budget: numeric
+            Budget for calculations, it can be either time in seconds or number of iterations, default value is taken
+            from constructor
+        """
         
         self._pos_class = pos_class
         if calculations_done_conditions is not None:
@@ -122,7 +179,7 @@ class GSFS:
         self._update_nodes(used_nodes, score)
         self._global_scores.update_score(node._features, score)
         
-        if(score > self._best_score):
+        if score > self._best_score:
             self._best_score = score
             self._best_features = list(node._features)
             self._scores_history = self._scores_history.append({
@@ -132,7 +189,7 @@ class GSFS:
                 'iteration': self._iterations
             },ignore_index=True)
         
-        if(self._longest_tree_branch < used_nodes_index):
+        if self._longest_tree_branch < used_nodes_index:
             self._longest_tree_branch = used_nodes_index
 
     
@@ -175,9 +232,12 @@ class GSFS:
             return (time.time() - self._time) > self._calculations_budget 
     
     def _print_calculations_info_if_needed(self):
+        if self._calculations_done_condition != 'iterations':
+            return
+        
         calc_interval = self._calculations_budget/100
         
-        if int(((self._iterations)/calc_interval)-((self._iterations-1)/calc_interval)) > 0:
+        if (int((self._iterations/calc_interval))-int(((self._iterations-1)/calc_interval))) > 0:
             print(str(self._iterations) + '/' + str(self._calculations_budget))
     
     def get_best_features(self):
