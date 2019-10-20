@@ -26,7 +26,7 @@ class CV:
         Returns: float, cross-validation score
         """
         
-        kfold = StratifiedKFold(n_splits=cv, random_state=None, shuffle=True)
+        kfold = StratifiedKFold(n_splits=cv, random_state=123, shuffle=True)
         score = 0
         
         if metric_name in ['acc','f1']:

@@ -84,6 +84,11 @@ class GSFS:
         else:
             self._params = DefaultSettings.merge_params(params)
         
+    @staticmethod 
+    def print_info():
+        print('Graph Search Feature Selection')
+        print('Version: 1.0.0')
+    
     def fit(self, data, out_variable, pos_class = 'numeric', warm_start = False, 
                  calculations_done_conditions = None,
                  calculations_budget = None):

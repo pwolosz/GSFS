@@ -25,7 +25,7 @@ class TrainTestScore:
             
         Returns: float, train-test split score
         """
-        X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size)
+        X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size, random_state = 123)
         model.fit(X_train, y_train)
         
         if metric_name in ['acc','f1']:
