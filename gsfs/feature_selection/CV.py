@@ -1,41 +1,47 @@
 from sklearn.model_selection import StratifiedKFold
 
 class CV:
-    """Class containing method for cross-validation"""
+    """Class containing static method for performing cross-validation"""
     
     @staticmethod
     def cv(metric, metric_name, model, data, labels, cv):
         """
-        Method for performing stratified cross-validation (sklearn.model_selection.StratifiedKFold)
+        Static method that performs cross-validation for selected dataset and model.   
+        It uses StratifiedKFold fromsklearn.model_selection to make the "cv" number of splits, 
+        every split will have same ratio of rows with positive class to rows with negative class 
+        as the input dataset.
         
         Parameters
         ----------
-        metric: method metric
-            Metric that will be calculated, it can be one of BuildInMetrics or own one, see documentation for more info
+        metric: sklearn metric from BuildInMetrics
+            One of the supported metrics (supported metrics are in BuildInMetrics module),
         metric_name: str
-            Name of the metric that will be used
-        model: scikit-learn model
-            Model that the performance will be calculated for
-        data: pd.DataFrame
-            Data that will be used for cross-validation
+            Name of used metric,
+        model: sklearn model
+            Model for which the cross-validation score will be calculated,
+        data: pandas.DataFrame
+            Input dataset used in cross-validation,
         labels: pandas.Series
-            Labels that will be used for cross-validation
+            Labels of input dataset,
         cv: int
-            Number of folds
+            Number of folds in cross-validation.
             
-        Returns: float, cross-validation score
+        Returns: float
+            Cross-validation score for selected metric.
         """
-        
+
         kfold = StratifiedKFold(n_splits=cv, random_state=123, shuffle=True)
         score = 0
         
         if metric_name in ['acc','f1']:
             for train, test in kfold.split(data, labels):
+                print(data.loc[train,:].columns)
                 model.fit(data.loc[train,:], labels[train])
                 predicted = model.predict(data.loc[test,:])
                 score += metric(labels[test], predicted)
         else:
             for train, test in kfold.split(data, labels):
+                print(data.loc[train,:].columns)
                 model.fit(data.loc[train,:], labels[train])
                 predicted = model.predict_proba(data.loc[test,:])[:,1]
                 score += metric(labels[test], predicted)

@@ -2,17 +2,18 @@ import math
 import random
 
 class MultiArmStrategies:
-    """Class for representing strategies used for selecting next node to visit in MCTS. 
-    For more info please see documentation"""
+    """Class containing functions for multi-arm strategies that are used during search of the graph."""
     
     def __init__(self, name, all_features_names, params):
         """
         Parameters
         ----------
         name: str
-            Name of the strategy that will be used
-        all_node_names: list
-            List containing all possible names of the features that MCTS will search through
+            Name of the strategy, available values are "discrete" and "continuous",
+        all_features_names: set
+            Set containing all names of the variables in adataset used in search,
+        params: dict
+            Parameters of the algorithm.
         """
         
         self._name = name
@@ -21,19 +22,22 @@ class MultiArmStrategies:
         
     def multiarm_strategy(self, node, scoring_functions, global_scores, node_adder):
         """
-        Method for getting next node in current search.
+        Method for getting next node in a search using strategy specified in constructor. 
+        If needed,the method adds a new node to the graph.
+
         Parameters
         ----------
-        node: Node
-            Current node
-        used_features: list
-            List of feature names that are already used in search path
-        scoring_functions: ScoringFunctions
-            Object containing functions for calculating scores
-        global_scores: GlobalScores
-            Object containing scores used in strategy
-        params: dict
-            Dictionary with MCTS parameters
+        node: gsfs.feature_selection.Node
+            Current node in a search iteration,
+        scoring_functions: gsfs.feature_selection.ScoringFunctions
+            Scoring-Functions object used in a search, containing methods for calculating scoresfor nodes,
+        global_scores: gsfs.feature_selection.GlobalScores
+            GlobalScores ob-ject used in a search, contains RAVE scores,
+        node_adder: gsfs.feature_selection.NodeAdder
+            Object used in search, allows MultiArmStrategies to add nodes to current node.
+            
+        Returns: gsfs.feature_selection.Node
+            Next node in search.
         """
         
         if self._name == 'continuous':
@@ -62,7 +66,7 @@ class MultiArmStrategies:
     def _get_best_node(self, node, scoring_functions, global_scores):
         best_score = -1
         best_node = None
- 
+
         for child_node in node._children:
             score = scoring_functions.get_score(node, child_node, global_scores)
             
@@ -77,22 +81,21 @@ class MultiArmStrategies:
         best_node = None
         not_used_features = self._all_features_names - node._features - node.get_used_features_in_children()
         add_node = False
-        
+        best_feature = None
         for child_node in node._children:
             score = scoring_functions.get_score(node, child_node, global_scores)
            
             if score > best_score:
                 best_score = score
-                best_node = child_node
-               
+                best_node = child_node    
         for feature in not_used_features:
             score = scoring_functions.get_new_node_score(feature, node, global_scores)
             
-            if score > best_score:
+            if score * self._params['new_node_preference'] > best_score:
                 best_score = score
                 add_node = True
                 best_feature = feature
-      
+            
         if add_node:
             best_node = node_adder.add_node(node, best_feature)
             

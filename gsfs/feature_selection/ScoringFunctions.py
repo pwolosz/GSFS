@@ -1,32 +1,35 @@
 import math
 
 class ScoringFunctions():
-    """Class used for getting scoring functions that are used to evaluate the node of the MCTS tree."""
+    """
+    Class containing scoring functions that are used during graph search. 
+    Available scoring functions are "UCB1", "UCB1_with_variance" and "UCB1_rave".
+    """
     
     def __init__(self, scoring_name, params):
         """
         Parameters
         ----------
         scoring_name: str
-            Name of the scoring function that will be used
+            Name of the scoring function that will be used,
         params: dict
-            Dictionary containing parameters of the scoring functions, please see documentation for more info
+            Parameters of scoring functions.
         """
         self._params = params
         self._scoring_name = scoring_name
 
     def set_scoring_function(self, scoring_name, params = None):
         """
-        Method for setting scoring function that will be returned from class instance.
+        Method setting scoring function.
         
         Parameters
         ----------
         scoring_name: str
-            Name of the scoring function that will be used
+            Name of the scoring function that will be used,
         params: dict (default: None)
-            Dictionary containing parameters of the scoring functions, please see documentation for more info
+            Parameters of scoring functions, if None then the one specified during initialization will be used.
             
-            """
+        """
 
         self._scoring_name = scoring_name
         if(params is not None):
@@ -34,14 +37,17 @@ class ScoringFunctions():
 
     def get_score(self, parent_node, node, global_scores):
         """
-        Method for getting score for selected node. If the name set with init or set_scoring_function is not supported, 
-        the exception will be thrown.
+        Method for getting score of the node.
+
         Paramteres
         ----------
-        node: Node
-            Node which the score will be calculated for
-        global_scores: GlobalScores
-            Object containing global scores and methods necessary to calculate the score of the node
+        node: gsfs.feature_selection.Node
+            Current node in search iteration,
+        global_scores: gsfs.feature_selection.GlobalScores
+            Object containing values that are needed in calculating score of the node, e.g RAVE.
+
+        Returns: float
+            Score of the node.
         """
         
         if(self._scoring_name == 'UCB1'):
@@ -51,9 +57,25 @@ class ScoringFunctions():
         elif(self._scoring_name == 'UCB1_rave'):
             return self._rave_scoring(parent_node, node, global_scores)
         else:
-            raise Exception('Error initializing ScoringFunctions object, \"' + self._name + '\" is not supported.')
+            raise Exception('Error initializing ScoringFunctions object, \"' + self._scoring_name + '\" is not supported.')
      
     def get_new_node_score(self, feature_name, node, global_scores): 
+        """
+        Method for getting score for new node (node that hasn’t been added to the graph). New node would have set of features Node.F+{feature_name}.
+
+        Parameters
+        ----------
+        feature_name: str
+            Name of the feature that is added to current node’s set of features,
+        node: gsfs.feature_selection.Node
+            Current node in search for which adding the new node is considered,
+        global_scores: gsfs.feature_selection.GlobalScores
+            Object containingvalues that are needed in calculating score of the node, e.g RAVE.
+			
+        Returns: float
+            Score of the node.
+        """
+        
         if global_scores.get_n(feature_name) == 0:
             return float('Inf')
         
@@ -67,16 +89,17 @@ class ScoringFunctions():
         return (1 - beta) * l_rave + beta * g_rave
     
     def _ucb_scoring(self, parent_node, node):
-        if(node._parent_node == None or node.T == 0):
+        if parent_node == None or node.T == 0:
             return float("Inf")
         else:
             return node.get_score() + math.sqrt(self._params['c_e'] * math.log(parent_node.T)/node.T)
         
     def _ucb_var_scoring(self, parent_node, node):
-        if(node._parent_node == None or node.T == 0):
+        if parent_node == None or node.T == 0:
             return float("Inf")
         else:
-            return node.get_score() + math.sqrt(self._params['c_e'] * math.log(parent_node.T)/node.T)     
+            return node.get_score() + math.sqrt((self._params['c_e'] * math.log(parent_node.T)/node.T) * 
+            min(0.25, node.get_variance() + math.sqrt(2 * math.log(parent_node.T)/node.T)))     
         
     def _rave_scoring(self, parent_node, node, global_scores):
         t_l = global_scores.get_t_l(node._features)

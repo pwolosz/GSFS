@@ -3,17 +3,21 @@ from queue import *
 
 def draw_tree(node_adder, file_name = None, view = True, view_nodes_info = False):
     """
-    Method for drawing tree build during MCTS
+    Method for drawing the search graph.
+
     Parameters
     ----------
-    node_adder: NodeAdder
-        NodeAdder used in mcts iterations
-    file_name: str
-        Name of the output file, if None then the visualization won't be saved
-    view: boolean
-        Flag indicating whether the visualization will be shown
-    view_nodes_info: boolean
-        
+    node_adder: gsfs.feature_selection.NodeAdder
+        NodeAdder instance that was used in algorithm,
+    file_name: str (default: None)
+        If specified the graph will be saved in pdf format in a file specified in this parameter,
+    view: boolean (default: True)
+        If Truethen the graph will beviewed in a default browser,
+    view_nodes_info: boolean (default: False)
+        If False then only features names are displayed, otherwise each node will have additionaly number of visits, 
+        average score and variance displayed.
+       
+    Returns: None
     """
     
     dot = Digraph(comment='mcts')

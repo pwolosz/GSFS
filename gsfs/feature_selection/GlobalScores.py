@@ -2,7 +2,7 @@ from gsfs.feature_selection.LRavePaths import *
 import pandas as pd
 
 class GlobalScores:
-    """Class used for getting global scores like g-RAVE and l-RAVE."""
+    """Class containing methods for getting and updating l-RAVE and g-RAVE."""
     
     def __init__(self):
         self.scores = {'g_rave': {},
@@ -10,13 +10,18 @@ class GlobalScores:
     
     def update_score(self, used_features, score):
         """
-        Method for updating scores for selected path
+        Method for updating g-RAVE and l-RAVE for all features inused_features.
+
+        -----------
         Parameters:
         used_features: set
-            Features used in current path
-        score: numeric
-            Value of the score
+            Set of features for which the scores will be added,
+        score: float
+            Value of the score that will be added.
+
+        Returns: None
         """
+
         self._update_l_rave_score(used_features, score)
         self._update_g_rave_score(used_features, score)
     
@@ -33,22 +38,32 @@ class GlobalScores:
     
     def get_l_rave_score(self, used_features):
         """
-        Method for getting l-RAVE score for selected feature and already used features
+        Method for getting l-RAVE score for selected features.
+
         Parameters
         ----------
         used_features: set
-            Set of features for which the score will be returned
+            Set of features for which the score will be returned, 
+            the score will be average score of all nodes containingused_featuresas subset oftheir features, 
+            if selected features haven’t been visited 0 is returned.
+
+        Returns: float
+            l-RAVE score for selected features.
         """
         
         return self.scores['l_rave'].get_path_score(used_features)
         
     def get_g_rave_score(self, name):
         """
-        Method for getting g-RAVE score for selected feature
+        method for getting g-RAVE score for selected feature, if feature hasn’t been visited 0 is returned.
+
         Parameters
         ----------
         name: str
-            Name of feature
+            Name of the feature for which the score will be returned, the score will be an average score from all paths containing selected feature.
+
+        Returns: float
+            g-RAVE score for selected feature.
         """
         
         if name not in self.scores['g_rave']:
@@ -57,27 +72,57 @@ class GlobalScores:
         score_info = self.scores['g_rave'][name]
         return score_info['score']/score_info['n']
     
-    def get_n(self, feature):
-        if feature not in self.scores['g_rave']:
+    def get_n(self, name):
+        """
+        Method for getting number of times feature is used in a node (is in set offeatures in node), if feature hasn’t been selected 0 is returned.
+
+        ----------
+        Parameters
+        name: str
+            Name of the feature for which the number of times it was usedwill be returned.
+
+        Returns: int
+            How many times the feature was used.
+        """
+        if name not in self.scores['g_rave']:
             return 0
         
-        return self.scores['g_rave'][feature]['n']
+        return self.scores['g_rave'][name]['n']
     
     def get_t_l(self, used_features):
         """
-        Method for getting t_l (number of iterations in computing l-RAVE)
+        Method for getting number of iterations in calculating l-RAVE score, 
+        it’s a number of nodes which scores will be taken in calculating l-RAVE score for selected features.
+
         Parameters
         ----------
         used_features: set
-            Set of already used features
+            Features for which the score will be calculated.
+
+        Returns: int
+            Number of iterations in l-RAVE calculation.
         """
         
         return self.scores['l_rave'].get_t_l(used_features)
     
     def get_l_rave_dataframe(self):
+        """
+        Method for getting all l-RAVE scores in form of DataFrame,with columns features, n, scores and score.
+
+        Returns: pandas.DataFrame
+            Data frame with all l-RAVE scores.
+        """
+
         return self.scores['l_rave'].get_scores_dataframe()
         
     def get_g_rave_dataframe(self):
+        """
+        Method for getting all g-RAVE scores in form of DataFrame, with columns feature, n, scores and score.
+
+        Returns: pandas.DataFrame
+            DataFrame with all g-RAVE scores.
+        """
+
         names = []
         n = []
         scores = []

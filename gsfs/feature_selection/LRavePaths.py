@@ -1,6 +1,8 @@
 import pandas as pd
 
 class LRavePaths:
+    """Class for providing l-RAVE scores for algorithm."""
+
     def __init__(self):
         self._paths = []
         self._n_vals = []
@@ -8,13 +10,14 @@ class LRavePaths:
         
     def add_path_score(self, used_features, score):
         """
-        Method for adding score for path made of selected nodes
+        Method for adding l-RAVE score for selected features.
+
         Parameters
         ----------
         used_features: set
-            Set of features in selected path
-        score: numeric
-            Score that was obtained with nodes from selected path
+            Features for which the score will be added,
+        score: float
+            Added score.
         """
         
         tmp_features = used_features.copy()
@@ -30,12 +33,19 @@ class LRavePaths:
     
     def get_path_score(self, used_features):
         """
-        Method for getting score for selected path and feature
+        Method for getting l-RAVE score for selected features, it will be an average score of all nodes that have used_featuresas as subset of their features.
+
         Parameters
         ----------
         used_features: set
-            Set of features in selected path
+            Features for which the score will be calculated.
+
+        Returns: float
+            l-RAVE score for selected features.
         """
+        
+        if used_features is None:
+            raise Exception('used_features cannot be None')
         
         indexes = list(filter(lambda i: used_features.issubset(self._paths[i]), range(len(self._paths))))
         
@@ -49,12 +59,20 @@ class LRavePaths:
 
     def get_t_l(self, used_features):
         """
-        Method for getting t_l (number of iterations in computing l-RAVE)
+        Method for getting number of iterations in calculating l-RAVE score, it’s a number of nodes which scores 
+        will be taken in calculating l-RAVE score for selected features.
+
         Parameters
         ----------
         used_features: set
-            Set of features in selected path
+            Features for which the t_l will be calculated.
+
+        Returns: int
+            Number of iterations in l-RAVE calculation.
         """
+        
+        if used_features is None:
+            raise Exception('used_features cannot be None')
         
         indexes = list(filter(lambda i: used_features.issubset(self._paths[i]), range(len(self._paths))))
         
@@ -65,6 +83,12 @@ class LRavePaths:
         return sum([self._n_vals[i] for i in indexes])
     
     def get_scores_dataframe(self):
+        """
+        Method for getting all l-RAVE scores that were added.
+
+        Returns: pandas.DataFrame
+            Data frame in which every row contains fields features, n, scores, score.
+        """
         return pd.DataFrame({
             'features': [','.join(s) for s in self._paths],
             'n': self._n_vals, 

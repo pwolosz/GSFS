@@ -1,12 +1,18 @@
 class EndStrategies:
-    """Class for strategies of ending search."""
+    """
+    Class containing strategies for ending an iteration of graph search. 
+    Only one end strategy issupported - iteration is stopped 
+    if the current node is a new node (T=0) or the node containsall possible features.
+    """
     
     def __init__(self, name, features_count):
         """
         Parameters
         ----------
         name: str
-            Name of the end strategy
+            Name of the end strategy that will be used, currently only default is supported.
+        features_count: int
+            Number of all features in the dataset.
         """
         
         self._name = name
@@ -14,14 +20,15 @@ class EndStrategies:
     
     def are_calculations_over(self, node):
         """
-        Method for getting information whether the current iteration of search is over. 
-        If the name set in the init is not correct then the exception is thrown.
+        Method for getting information whether the current search iterationmust be finished.
+
         Parameters
         ----------
-        node: Node
-            Current node
-        params: dict
-            Dictionary containing parameters of MCTS algorithm
+        node: gsfs.feature_selection.Node
+            Current node in search iteration.
+        
+        Returns: boolean
+            Value indicating whether the iteration should end or not.
         """
         
         if(self._name == 'default'):

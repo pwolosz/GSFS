@@ -10,22 +10,24 @@ class TrainTestScore:
         
         Parameters
         ----------
-        metric: method metric
-            Metric that will be calculated, one of BuildInMetrics, see documentation for more info
+        metric: sklearn metric from BuildInMetrics
+            One of the supported metrics (supported metrics are in BuildInMetrics module),
         metric_name: str
-            Name of the metric that will be used
-        model: scikit-learn model
-            Model that the performance will be calculated for
-        data: pd.DataFrame
-            Data that will be used for train-test split
+            Name of used metric,
+        model: sklearn model
+            Model for which the train-test score will be calculated,
+        data: pandas.DataFrame
+            Input dataset used in train-test split,
         labels: pandas.Series
-            Labels that will be used for train-test split
+            Labels of input dataset
         test_size: float
-            Fraction of the input dataset that will be used as a test
+            Fraction of the input dataset that will be used as a test dataset.
             
-        Returns: float, train-test split score
+        Returns: float 
+            Train-test split score.
         """
-        X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size, random_state = 123)
+
+        X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size = test_size, random_state = 123)
         model.fit(X_train, y_train)
         
         if metric_name in ['acc','f1']:

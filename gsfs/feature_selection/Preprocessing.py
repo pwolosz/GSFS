@@ -7,17 +7,17 @@ class Preprocessing:
     @staticmethod
     def relabel_data(labels, pos_label = None):
         """
-        Method for getting transformed labels, which means changing all positive class labels (pos_label value)
-        are changed to 1, other classes are changed to 0.
+        method for relabeling input data, changing value specified as "pos_label" to 1 and all other values to 0.
         
         Parameters
         ----------
         labels: pandas.Series
-            List of labels which will be transformed
+            Out variable of the dataset, will be relabeled to 1 (positive class) and 0 (the rest of the classes),
         pos_label: str|numeric (default: None)
-            Value which is positive class indicator, if None then it will be assumed that 1 is positive
+            Positive class label, if None then maximum value of all values present in "labels" will be taken as positive label.
         
-        Return: list containing values 0 and 1 with same length as labels.
+        Returns: pandas.Series
+            Relabeled variable.
         """
 
         if pos_label is None:
@@ -31,23 +31,32 @@ class Preprocessing:
     @staticmethod
     def one_hot_encode(data):
         """
-        Method for performing one-hot encoding. Using LabelEncoder and OneHotEncoder from sklearn.preprocessing.
-        All columns containing string values will be encoded, if the column has n unique values then n new columns will
-        be added, and the end original column is deleted.
+        Method that can be used to one-hot encode input data. All columns containing string not-numerical will be one-hot encoded.
 
         Parameters
         ----------
         data: pandas.DafaFrame
-        Dataframe that will be transformed
+            Data frame that will be one-hot encoded.
 
-        Return: pandas.DataFrame with encoded columns.
+        Returns: pandas.DataFrame 
+            Data frame with one-hot encoding.
         """
 
         for col in data:
-            if(isinstance(data.loc[0,col], str)):
+            ind = -1
+
+        for i in data.index.values:
+            if not pd.isnull(data.loc[i,col]):
+                ind = i
+
+        if ind == -1:
+            print('Column "' + col + '" contains only NaN values, removing it')
+            data = data.drop(columns=[col])
+        else:   
+            if isinstance(data.loc[ind,col], str):
                 dummies = pd.get_dummies(data.loc[:,col])
                 dummies.columns = col + '_' + dummies.columns
                 data = data.join(dummies)
                 data = data.drop(columns = col)
-
+                
         return data
