@@ -32,7 +32,7 @@ class ScoringFunctions():
         """
 
         self._scoring_name = scoring_name
-        if(params is not None):
+        if params is not None :
             self._params = params 
 
     def get_score(self, parent_node, node, global_scores):
@@ -50,11 +50,11 @@ class ScoringFunctions():
             Score of the node.
         """
         
-        if(self._scoring_name == 'UCB1'):
+        if self._scoring_name == 'UCB1':
             return self._ucb_scoring(parent_node, node)
-        elif(self._scoring_name == 'UCB1_with_variance'):
+        elif self._scoring_name == 'UCB1_with_variance':
             return self._ucb_var_scoring(parent_node, node)
-        elif(self._scoring_name == 'UCB1_rave'):
+        elif self._scoring_name == 'UCB1_rave':
             return self._rave_scoring(parent_node, node, global_scores)
         else:
             raise Exception('Error initializing ScoringFunctions object, \"' + self._scoring_name + '\" is not supported.')

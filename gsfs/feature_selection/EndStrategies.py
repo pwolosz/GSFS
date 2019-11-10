@@ -31,7 +31,7 @@ class EndStrategies:
             Value indicating whether the iteration should end or not.
         """
         
-        if(self._name == 'default'):
+        if self._name == 'default':
             return self._first_new_strategy(node)
         else:
             raise Exception("Error getting end strategy, end strategy \'" + self._name + "\'")

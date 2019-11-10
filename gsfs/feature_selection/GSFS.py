@@ -76,6 +76,11 @@ class GSFS:
         
         print('Using cross-validation: ' + str(with_cv))
         
+        if not (isinstance(self._calculations_budget,float) or isinstance(self._calculations_budget,int)):
+            raise Exception('Calculations budget must be a float or int')
+        elif self._calculations_budget <= 0:
+            raise Exception('Calculations budget must be > 0')
+        
         if params is None:
             print('No param overrides provided, using default ones')
             self._params = DefaultSettings.get_default_params()
@@ -120,6 +125,10 @@ class GSFS:
             self._calculations_done_condition = calculations_done_conditions
         
         if calculations_budget is not None:
+            if not (isinstance(calculations_budget,float) or isinstance(calculations_budget,int)):
+                raise Exception('Calculations budget must be a float or int')
+            elif calculations_budget <= 0:
+                raise Exception('Calculations budget must be > 0')
             self._calculations_budget = calculations_budget
             
         data, out_variable = self._preprocess_input(data, out_variable)
@@ -130,6 +139,13 @@ class GSFS:
         """Not fully supported method, only for experimenting purposes."""
         
         data, out_variable = self._preprocess_input(data, out_variable)
+        
+        if calculations_budget is not None:
+            if not (isinstance(calculations_budget,float) or isinstance(calculations_budget,int)):
+                raise Exception('Calculations budget must be a float or int')
+            elif calculations_budget <= 0:
+                raise Exception('Calculations budget must be > 0')
+            self._calculations_budget = calculations_budget
         
         if self._calculations_done_condition == 'iterations':
             self._calculations_budget += calculations_budget + 1

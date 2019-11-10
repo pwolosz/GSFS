@@ -35,13 +35,11 @@ class CV:
         
         if metric_name in ['acc','f1']:
             for train, test in kfold.split(data, labels):
-                print(data.loc[train,:].columns)
                 model.fit(data.loc[train,:], labels[train])
                 predicted = model.predict(data.loc[test,:])
                 score += metric(labels[test], predicted)
         else:
             for train, test in kfold.split(data, labels):
-                print(data.loc[train,:].columns)
                 model.fit(data.loc[train,:], labels[train])
                 predicted = model.predict_proba(data.loc[test,:])[:,1]
                 score += metric(labels[test], predicted)

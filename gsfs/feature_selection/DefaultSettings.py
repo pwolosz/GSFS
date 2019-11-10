@@ -42,4 +42,19 @@ class DefaultSettings:
         print('Parameters:')
         print(merged_params)
 
+        if merged_params['c_e'] < 0:
+            raise Exception('c_e must be >= 0')
+        if merged_params['c'] < 0:
+            raise Exception('c must be >= 0')
+        if merged_params['c_l'] <= 0:
+            raise Exception('c_l must be > 0')
+        if merged_params['cv'] <= 0:
+            raise Exception('cv must be > 0')
+        if merged_params['b_T'] <= 0:
+            raise Exception('b_T must be > 0')
+        if merged_params['test_size'] <= 0:
+            raise Exception('test_size must be > 0')
+        if merged_params['new_node_preference'] <= 0:
+            raise Exception('new_node_preference must be > 0')
+            
         return merged_params
