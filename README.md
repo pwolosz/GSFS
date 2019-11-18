@@ -1,8 +1,7 @@
 # Graph Search Feature Selection
 This is a package for Feature Selection, that is an relaying on work from paper https://hal.inria.fr/inria-00484049/document. 
 This version is using graph to represent the structure during search and concepts like RAVE, UCB1 and Monte-Carlo Tree Search
-(instead of tree graph is searched)
-like
+(instead of tree graph is searched).
 
 ## Instalation
 Download package from github and unpack
