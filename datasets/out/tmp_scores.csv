@@ -1,3 +1,0 @@
-,dataset,tpot_auc,sklearn_auc,third
-0,blood-transfusion-service-center.csv,0.664091,0.764706
-1,credit-g.csv,0.667945,0.764000
