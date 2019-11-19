@@ -5,7 +5,7 @@ This version is using graph to represent the structure during search and concept
 
 ## Instalation
 Download package from github and unpack.
-Install using pip by runing:
+Install using pip by executing:
 
 ```
 pip install .
