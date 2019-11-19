@@ -4,7 +4,7 @@ This version is using graph to represent the structure during search and concept
 (instead of tree graph is searched).
 
 ## Instalation
-Download package from github and unpack
+Download package from github and unpack.
 Install using pip by runing:
 
 ```
