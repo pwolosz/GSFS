@@ -9,7 +9,7 @@ setup(name='GSFS',
       license='GNU General Public License v3.0',
       packages=find_packages(),
       install_requires=[
-	'numpy==1.14.2',
+	'numpy==1.22.0',
 	'pandas==0.23.4',
 	'scikit-learn==0.20.2',
 	'graphviz==0.8.4',
